@@ -1,0 +1,52 @@
+:root {
+  /* Palette: Slate (Backgrounds), Indigo (User), Emerald (AI), Amber (Synthesis) */
+  --color-bg-canvas: #0f172a; /* Slate 900 */
+  --color-bg-panel: #1e293b; /* Slate 800 */
+  --color-border: #334155; /* Slate 700 */
+  
+  --color-text-primary: #f8fafc; /* Slate 50 */
+  --color-text-secondary: #94a3b8; /* Slate 400 */
+
+  --color-user: #6366f1; /* Indigo 500 */
+  --color-user-hover: #4f46e5; /* Indigo 600 */
+  
+  --color-ai: #10b981; /* Emerald 500 */
+  --color-ai-hover: #059669; /* Emerald 600 */
+  
+  --color-synthesis: #f59e0b; /* Amber 500 */
+  --color-synthesis-glow: rgba(245, 158, 11, 0.5);
+
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --transition-fast: 0.2s ease;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent body scroll, canvas handles it */
+  font-family: var(--font-family);
+  background-color: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Utilities */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.full-size {
+  width: 100%;
+  height: 100%;
+}
