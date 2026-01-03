@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGraphStore, type GraphNode } from '@/modules/core/stores/graphStore'
 import { useLLMStore } from '@/modules/core/stores/llmStore'
 
+const { t } = useI18n()
 const store = useGraphStore()
 const llmStore = useLLMStore()
 const input = ref('')
@@ -15,7 +17,7 @@ const handleSubmit = async () => {
   
   // Basic safety check for keys
   if (!llmStore.openaiApiKey && !llmStore.googleApiKey) {
-    alert('Please set your API Keys in Settings first!')
+    alert(t('chat.error.apiKeyMissing'))
     // We could allow proceeding but it will likely fail or require mock.
     // Let's allow it to try, the store throws error which we catch.
   }
@@ -34,15 +36,15 @@ const handleSubmit = async () => {
         // 2. Create Synthesis Question Node
         const synthNodeId = generateId()
         const synthNode: GraphNode = {
-        id: synthNodeId,
-        type: 'synthesis',
-        label: `[SYNTHESIS] ${inputValue}`
+          id: synthNodeId,
+          type: 'synthesis',
+          label: `[SYNTHESIS] ${inputValue}`
         }
         store.addNode(synthNode)
 
         // 3. Connect Leaves
         leafNodes.forEach(leaf => {
-        store.addLink({ source: leaf.id, target: synthNodeId })
+          store.addLink({ source: leaf.id, target: synthNodeId })
         })
 
         // 4. Create Answer Node (Thinking)
@@ -50,7 +52,7 @@ const handleSubmit = async () => {
         const synthAnswer: GraphNode = {
             id: synthAnswerId,
             type: 'synthesis',
-            label: 'Synthesizing insights...'
+            label: t('synthesis.status.synthesizing')
         }
         store.addNode(synthAnswer)
         store.addLink({ source: synthNodeId, target: synthAnswerId })
@@ -72,9 +74,9 @@ const handleSubmit = async () => {
         // 1. Create User Node
         const userNodeId = generateId()
         const userNode: GraphNode = {
-        id: userNodeId,
-        type: 'user',
-        label: inputValue
+          id: userNodeId,
+          type: 'user',
+          label: inputValue
         }
         
         const lastNode = store.nodes[store.nodes.length - 1]
@@ -82,7 +84,7 @@ const handleSubmit = async () => {
 
         store.addNode(userNode)
         if (parentId) {
-        store.addLink({ source: parentId, target: userNode.id })
+          store.addLink({ source: parentId, target: userNode.id })
         }
         store.setActiveNode(userNodeId)
 
@@ -101,7 +103,7 @@ const handleSubmit = async () => {
         const aiNode: GraphNode = {
             id: aiNodeId,
             type: 'ai',
-            label: 'Thinking...'
+            label: t('chat.thinking')
         }
         store.addNode(aiNode)
         store.addLink({ source: userNodeId, target: aiNodeId })
@@ -119,11 +121,11 @@ const handleSubmit = async () => {
       const activeId = store.activeNodeId
       if (activeId) {
           const node = store.nodes.find(n => n.id === activeId)
-          if (node && (node.label === 'Thinking...' || node.label === 'Synthesizing insights...')) {
+          if (node && (node.label === t('chat.thinking') || node.label === t('synthesis.status.synthesizing'))) {
               node.label = `Error: ${err.message}`
           }
       }
-      alert(`Error generating response: ${err.message}`)
+      alert(`${t('chat.error.generation')}${err.message}`)
   } finally {
       isLoading.value = false
   }
@@ -137,7 +139,7 @@ const handleSubmit = async () => {
         @click="store.toggleSynthesisMode()" 
         class="synthesis-toggle-btn"
         :class="{ active: store.isSynthesisMode }"
-        title="Toggle Synthesis Mode"
+        :title="t('synthesis.toggleTooltip')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -147,7 +149,7 @@ const handleSubmit = async () => {
         v-model="input" 
         @keydown.enter="handleSubmit"
         type="text" 
-        :placeholder="store.isSynthesisMode ? 'Ask synthesis question...' : 'Ask a question...'" 
+        :placeholder="store.isSynthesisMode ? t('synthesis.placeholder') : t('chat.input.placeholder')" 
         class="chat-input"
       />
       <button @click="handleSubmit" class="send-btn">

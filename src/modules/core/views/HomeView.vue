@@ -12,8 +12,8 @@ import Legend from '@/modules/ui/components/Legend.vue'
     </div>
     <ChatPanel />
     <div class="placeholder-content">
-      <h1 class="title">Plexus Chat</h1>
-      <p class="subtitle">Connect. Merge. Disperse.</p>
+      <h1 class="title">{{ $t('home.title') }}</h1>
+      <p class="subtitle">{{ $t('home.subtitle') }}</p>
     </div>
   </div>
 </template>
@@ -24,7 +24,7 @@ import Legend from '@/modules/ui/components/Legend.vue'
   height: 100%;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+  background: radial-gradient(circle at center, var(--color-bg-gradient-start) 0%, var(--color-bg-gradient-end) 100%);
   display: flex; /* Sidebar layout */
 }
 

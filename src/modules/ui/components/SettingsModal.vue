@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useLLMStore } from '@/modules/core/stores/llmStore'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   isOpen: boolean
@@ -7,11 +8,8 @@ const props = defineProps<{
 
 const emit = defineEmits(['close'])
 
+const { t, locale } = useI18n()
 const store = useLLMStore()
-
-// Local state for inputs to allow cancellation? 
-// Actually, let's bind directly for simplicity or copy on open.
-// Binding directly is fine for this prototype.
 
 const handleOverlayClick = () => {
   emit('close')
@@ -23,12 +21,26 @@ const handleOverlayClick = () => {
     <div v-if="isOpen" class="modal-overlay" @click="handleOverlayClick">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>Settings</h3>
+          <h3>{{ t('settings.title') }}</h3>
           <button class="close-btn" @click="$emit('close')">×</button>
         </div>
         
         <div class="section">
-          <h4>Model Selection</h4>
+          <h4>{{ t('settings.language') }}</h4>
+          <div class="model-options">
+            <label class="model-option" :class="{ active: locale === 'en' }">
+              <input type="radio" value="en" v-model="locale">
+              <span class="model-name">English</span>
+            </label>
+            <label class="model-option" :class="{ active: locale === 'ko' }">
+              <input type="radio" value="ko" v-model="locale">
+              <span class="model-name">한국어</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section">
+          <h4>{{ t('settings.modelSelection') }}</h4>
           <div class="model-options">
             <label 
               v-for="model in store.availableModels" 
@@ -50,9 +62,9 @@ const handleOverlayClick = () => {
         </div>
 
         <div class="section">
-          <h4>API Keys</h4>
+          <h4>{{ t('settings.apiKeys') }}</h4>
           <div class="input-group">
-            <label>OpenAI API Key</label>
+            <label>{{ t('settings.openaiKey') }}</label>
             <input 
               type="password" 
               :value="store.openaiApiKey" 
@@ -61,7 +73,7 @@ const handleOverlayClick = () => {
             />
           </div>
           <div class="input-group">
-            <label>Google Gemini API Key</label>
+            <label>{{ t('settings.googleKey') }}</label>
             <input 
               type="password" 
               :value="store.googleApiKey" 
@@ -69,7 +81,7 @@ const handleOverlayClick = () => {
               placeholder="AIza..."
             />
           </div>
-          <p class="hint">Keys are stored locally in your browser.</p>
+          <p class="hint">{{ t('settings.hint') }}</p>
         </div>
       </div>
     </div>
@@ -99,6 +111,8 @@ const handleOverlayClick = () => {
   max-width: 500px;
   padding: 1.5rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -159,6 +173,7 @@ const handleOverlayClick = () => {
   border-radius: 8px;
   color: var(--color-text-primary);
   font-family: monospace;
+  box-sizing: border-box; /* Fix width */
 }
 
 .input-group input:focus {

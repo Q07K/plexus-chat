@@ -1,31 +1,162 @@
 :root {
-  /* Palette: Slate (Backgrounds), Indigo (User), Emerald (AI), Amber (Synthesis) */
-  --color-bg-canvas: #0f172a; /* Slate 900 */
-  --color-bg-panel: #1e293b; /* Slate 800 */
-  --color-border: #334155; /* Slate 700 */
-  
-  --color-text-primary: #f8fafc; /* Slate 50 */
-  --color-text-secondary: #94a3b8; /* Slate 400 */
+  /* =========================================
+     Base Palette (Dark Default)
+     ========================================= */
 
-  --color-user: #6366f1; /* Indigo 500 */
-  --color-user-hover: #4f46e5; /* Indigo 600 */
-  
-  --color-ai: #10b981; /* Emerald 500 */
-  --color-ai-hover: #059669; /* Emerald 600 */
-  
-  --color-synthesis: #f59e0b; /* Amber 500 */
+  /* Backgrounds */
+  --color-bg-canvas: #0f172a;
+  /* Slate 900 */
+  --color-bg-panel: #1e293b;
+  /* Slate 800 */
+  --color-bg-panel-transparent: rgba(15, 23, 42, 0.95);
+  --color-bg-hover-glass: rgba(255, 255, 255, 0.1);
+
+  /* Gradients */
+  --color-bg-gradient-start: #1e293b;
+  --color-bg-gradient-end: #0f172a;
+
+  /* Borders */
+  --color-border: #334155;
+  /* Slate 700 */
+
+  /* Text */
+  --color-text-primary: #f8fafc;
+  /* Slate 50 */
+  --color-text-secondary: #94a3b8;
+  /* Slate 400 */
+  --color-text-inverse: #0f172a;
+
+  /* Brand / Semantic Colors */
+  --color-user: #6366f1;
+  /* Indigo 500 */
+  --color-user-hover: #4f46e5;
+  /* Indigo 600 */
+
+  --color-ai: #10b981;
+  /* Emerald 500 */
+  --color-ai-hover: #059669;
+  /* Emerald 600 */
+
+  --color-synthesis: #f59e0b;
+  /* Amber 500 */
   --color-synthesis-glow: rgba(245, 158, 11, 0.5);
+
+  /* Bubble Backgrounds */
+  --color-bubble-user-bg: #312e81;
+  /* Indigo 900 */
+  --color-bubble-user-text: #f8fafc;
+
+  --color-bubble-ai-bg: #064e3b;
+  /* Emerald 900 */
+  --color-bubble-ai-text: #f8fafc;
+
+  --color-bubble-synthesis-bg: #451a03;
+  /* Amber 950 */
+  --color-bubble-synthesis-text: #f8fafc;
+
+  /* Misc */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --transition-fast: 0.2s ease;
+
+  /* Graph Vars */
+  --color-node-stroke: #ffffff;
+  --color-link-inactive: #334155;
+  --color-link-active: #94a3b8;
+  --color-node-inactive: #334155;
+  --color-node-highlight-synth: #3b82f6;
+  --color-node-active: #fcd34d;
+  --color-node-ancestor: #ffffff;
 }
 
-html, body {
+:root.light-mode {
+  /* =========================================
+     Light Theme Overrides
+     ========================================= */
+
+  /* Backgrounds */
+  --color-bg-canvas: #f8fafc;
+  /* Slate 50 */
+  --color-bg-panel: #ffffff;
+  /* White */
+  --color-bg-panel-transparent: rgba(255, 255, 255, 0.95);
+  --color-bg-hover-glass: rgba(0, 0, 0, 0.05);
+
+  /* Gradients */
+  --color-bg-gradient-start: #e2e8f0;
+  /* Slate 200 */
+  --color-bg-gradient-end: #f8fafc;
+  /* Slate 50 */
+
+  /* Borders */
+  --color-border: #cbd5e1;
+  /* Slate 300 */
+
+  /* Text */
+  --color-text-primary: #0f172a;
+  /* Slate 900 */
+  --color-text-secondary: #64748b;
+  /* Slate 500 */
+  --color-text-inverse: #f8fafc;
+
+  /* Brand / Semantic Colors - Adjusted for contrast if needed,
+     but standard Indigo/Emerald/Amber 500 usually work on white too.
+     Maybe darken slightly for better text contrast/border usage? */
+  --color-user: #4f46e5;
+  /* Indigo 600 */
+  --color-user-hover: #4338ca;
+  /* Indigo 700 */
+
+  --color-ai: #059669;
+  /* Emerald 600 */
+  --color-ai-hover: #047857;
+  /* Emerald 700 */
+
+  --color-synthesis: #d97706;
+  /* Amber 600 */
+  --color-synthesis-glow: rgba(217, 119, 6, 0.2);
+
+  /* Bubble Backgrounds - Light Pastels */
+  --color-bubble-user-bg: #e0e7ff;
+  /* Indigo 100 */
+  --color-bubble-user-text: #312e81;
+  /* Indigo 900 */
+
+  --color-bubble-ai-bg: #d1fae5;
+  /* Emerald 100 */
+  --color-bubble-ai-text: #064e3b;
+  /* Emerald 900 */
+
+  --color-bubble-synthesis-bg: #fffbeb;
+  /* Amber 50 */
+  --color-bubble-synthesis-text: #78350f;
+  /* Amber 900 */
+
+  /* Graph Vars Light */
+  --color-node-stroke: #ffffff;
+  --color-link-inactive: #cbd5e1;
+  /* Slate 300 */
+  --color-link-active: #64748b;
+  /* Slate 500 */
+  --color-node-inactive: #cbd5e1;
+  --color-node-highlight-synth: #2563eb;
+  /* Blue 600 */
+  --color-node-active: #d97706;
+  /* Amber 600 (Darker active to see on white) */
+  --color-node-ancestor: #0f172a;
+  /* Slate 900 (Dark ancestor on light bg) */
+}
+
+html,
+body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Prevent body scroll, canvas handles it */
+  overflow: hidden;
+  /* Prevent body scroll, canvas handles it */
   font-family: var(--font-family);
   background-color: var(--color-bg-canvas);
   color: var(--color-text-primary);

@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { useThemeStore } from '@/modules/core/stores/themeStore'
+import { onMounted } from 'vue'
+
+const themeStore = useThemeStore()
+
+onMounted(() => {
+  themeStore.initTheme()
+})
 </script>
 
 <template>

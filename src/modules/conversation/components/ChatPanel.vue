@@ -4,6 +4,7 @@ import { useGraphStore, type GraphNode } from '@/modules/core/stores/graphStore'
 import { useLLMStore } from '@/modules/core/stores/llmStore'
 import ChatInput from './ChatInput.vue'
 import SettingsModal from '@/modules/ui/components/SettingsModal.vue'
+import ThemeToggle from '@/modules/ui/components/ThemeToggle.vue'
 
 const store = useGraphStore()
 const llmStore = useLLMStore()
@@ -56,20 +57,23 @@ watch(messages, () => {
   <div class="chat-panel">
     <div class="header">
       <div class="header-content">
-        <h2>Context Thread</h2>
+        <h2>{{ $t('chat.thread') }}</h2>
         <div class="meta-info">
-             <span class="badge">{{ messages.length }} msgs</span>
+             <span class="badge">{{ messages.length }} {{ $t('chat.msgs') }}</span>
              <span class="model-badge" :class="llmStore.selectedModel?.provider">
                {{ llmStore.selectedModel?.name }}
              </span>
         </div>
       </div>
-      <button class="settings-btn" @click="isSettingsOpen = true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-      </button>
+      <div class="header-actions">
+        <ThemeToggle />
+        <button class="settings-btn" @click="isSettingsOpen = true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
     </div>
     
     <div class="messages-list" ref="chatContainer">
@@ -91,7 +95,7 @@ watch(messages, () => {
       </div>
       
       <div v-if="!store.activeNodeId" class="empty-state">
-        Select a node to view the conversation thread.
+        {{ $t('chat.selectNode') }}
       </div>
     </div>
     
@@ -110,7 +114,7 @@ watch(messages, () => {
   right: 0;
   width: 400px;
   height: 100%;
-  background: rgba(15, 23, 42, 0.95);
+  background: var(--color-bg-panel-transparent);
   border-left: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
@@ -130,6 +134,12 @@ watch(messages, () => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .header h2 {
@@ -159,7 +169,7 @@ watch(messages, () => {
 }
 
 .settings-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-hover-glass);
   color: var(--color-text-primary);
 }
 
@@ -255,17 +265,20 @@ watch(messages, () => {
 }
 
 .message-item.user .bubble {
-  background: #312e81; /* Dark Indigo */
+  background: var(--color-bubble-user-bg);
+  color: var(--color-bubble-user-text);
   border-top-right-radius: 2px;
 }
 
 .message-item.ai .bubble {
-  background: #064e3b; /* Dark Emerald */
+  background: var(--color-bubble-ai-bg);
+  color: var(--color-bubble-ai-text);
   border-top-left-radius: 2px;
 }
 
 .message-item.synthesis .bubble {
-  background: #451a03; /* Dark Amber */
+  background: var(--color-bubble-synthesis-bg);
+  color: var(--color-bubble-synthesis-text);
   border: 1px solid var(--color-synthesis);
 }
 

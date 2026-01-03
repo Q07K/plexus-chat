@@ -15,8 +15,8 @@ const store = useGraphStore()
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
       </svg>
     </div>
-    <span class="label">Synthesis Mode</span>
-    <span class="status">{{ store.isSynthesisMode ? 'ON' : 'OFF' }}</span>
+    <span class="label">{{ $t('synthesis.mode') }}</span>
+    <span class="status">{{ store.isSynthesisMode ? $t('synthesis.on') : $t('synthesis.off') }}</span>
   </button>
 </template>
 
@@ -28,7 +28,7 @@ const store = useGraphStore()
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: rgba(30, 41, 59, 0.8);
+  background: var(--color-bg-panel-transparent);
   backdrop-filter: blur(8px);
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
@@ -40,7 +40,7 @@ const store = useGraphStore()
 }
 
 .synthesis-toggle:hover {
-  background: rgba(30, 41, 59, 1);
+  background: var(--color-bg-panel);
   border-color: var(--color-text-secondary);
 }
 

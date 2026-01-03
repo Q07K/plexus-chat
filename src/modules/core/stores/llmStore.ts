@@ -17,11 +17,11 @@ export const useLLMStore = defineStore('llm', () => {
     const selectedModelId = ref(localStorage.getItem('plexus_selected_model') || 'gemini-pro')
 
     const availableModels: ModelOption[] = [
-        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai' },
-        { id: 'gpt-4', name: 'GPT-4', provider: 'openai' },
         { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
-        { id: 'gemini-pro', name: 'Gemini Pro', provider: 'google' },
-        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'google' }
+        { id: 'gemini-3.0-flash-preview', name: 'Gemini 3.0 Flash Preview', provider: 'google' },
+        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'google' },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google' },
+        { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash Exp', provider: 'google' },
     ]
 
     const selectedModel = computed(() => availableModels.find(m => m.id === selectedModelId.value) || availableModels[0])

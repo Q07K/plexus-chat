@@ -115,9 +115,15 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
   render()
 }
 
-const render = () => {
+
+  const hexPath = (r: number) => {
+    // Flat-topped hexagon
+    const a = (2 * Math.PI) / 6;
+    return "M" + [0, 1, 2, 3, 4, 5].map(i => [r * Math.cos(a * i), r * Math.sin(a * i)]).join("L") + "Z";
+  };
+
+  const render = () => {
   // Render Links
-  // We use a group for links to keep them behind nodes
   let linkGroup = g.select<SVGGElement>('.links')
   if (linkGroup.empty()) {
     linkGroup = g.append('g').attr('class', 'links')
@@ -127,44 +133,77 @@ const render = () => {
       .data(store.links)
       .join('path')
       .attr('fill', 'none')
-      .attr('stroke', '#334155')
+      .attr('stroke', 'var(--color-link-inactive)')
       .attr('stroke-opacity', 0.6)
       .attr('stroke-width', 2)
 
   // Render Nodes
-  // We use a group for nodes
   let nodeGroup = g.select<SVGGElement>('.nodes')
   if (nodeGroup.empty()) {
     nodeGroup = g.append('g').attr('class', 'nodes')
   }
 
-  // We need to use a key function for data joining to ensure state preservation on updates
   const node = nodeGroup.selectAll<SVGGElement, d3.SimulationNodeDatum>('.node-group')
       .data(store.nodes, (d: any) => d.id)
       .join(
         enter => {
           const group = enter.append('g').attr('class', 'node-group')
-          
-          // User Node: Rounded Rect
-          group.filter((d: any) => d.type === 'user')
-               .append('rect')
-               .attr('width', 40)
-               .attr('height', 40)
-               .attr('x', -20)
-               .attr('y', -20)
-               .attr('rx', 10)
-               .attr('fill', '#6366f1')
-               .attr('stroke', '#fff')
-               .attr('stroke-width', 1.5)
 
-          // AI / Synthesis Node: Circle
-          group.filter((d: any) => d.type !== 'user')
-               .append('circle')
-               .attr('r', (d: any) => d.type === 'synthesis' ? 25 : 20)
-               .attr('fill', (d: any) => d.type === 'synthesis' ? '#f59e0b' : '#10b981')
-               .attr('stroke', '#fff')
-               .attr('stroke-width', (d: any) => d.type === 'synthesis' ? 3 : 1.5)
+          // --- User Node (Circle + Person Icon) ---
+          const userGroup = group.filter((d: any) => d.type === 'user');
+          userGroup.append('circle')
+               .attr('r', 22)
+               .attr('fill', 'var(--color-user)')
+               .attr('stroke', 'var(--color-node-stroke)')
+               .attr('stroke-width', 2)
+               .attr('class', 'node-shape');
           
+          userGroup.append('path')
+               .attr('d', "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z") // Simple Material User Icon
+               .attr('transform', 'translate(-12, -12) scale(1)') // Center 24x24 icon
+               .attr('fill', '#ffffff')
+               .attr('opacity', 0.9);
+
+
+          // --- AI Node (Hexagon + Sparkle Icon) ---
+          const aiGroup = group.filter((d: any) => d.type === 'ai');
+          aiGroup.append('path')
+               .attr('d', hexPath(24))
+               .attr('fill', 'var(--color-ai)')
+               .attr('stroke', 'var(--color-node-stroke)')
+               .attr('stroke-width', 2)
+               .attr('class', 'node-shape');
+
+          aiGroup.append('path')
+               .attr('d', "M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z") // Star/Sparkle
+               .attr('transform', 'translate(-12, -13) scale(1)') // Center
+               .attr('fill', '#ffffff')
+               .attr('opacity', 0.9);
+
+
+          // --- Synthesis Node (Diamond + Merge/Git Merge Icon) ---
+          const synthGroup = group.filter((d: any) => d.type === 'synthesis');
+          
+          // Diamond shape (rotated square)
+          synthGroup.append('rect')
+               .attr('width', 36)
+               .attr('height', 36)
+               .attr('x', -18)
+               .attr('y', -18)
+               .attr('rx', 4)
+               .attr('transform', 'rotate(45)')
+               .attr('fill', 'var(--color-synthesis)')
+               .attr('stroke', 'var(--color-node-stroke)')
+               .attr('stroke-width', 3)
+               .attr('class', 'node-shape');
+
+          // Git connected/Merge icon path
+          synthGroup.append('path')
+               .attr('d', "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z")
+               .attr('transform', 'translate(-12, -12) scale(1)')
+               .attr('fill', '#ffffff')
+               .attr('opacity', 0.9);
+
           return group
         },
         update => update,
@@ -176,10 +215,7 @@ const render = () => {
         event.stopPropagation() // Prevent zoom click
       })
 
-  // Watch effect for highlighting... (kept same logic, assuming external watchEffect covers it via re-selection)
-  // Actually the watchEffect updates attributes on existing nodes. 
-  // It selects '.node-group rect' etc. so it works fine even after re-render/join.
-
+  // Re-Apply simulation for new nodes
   simulation.nodes(store.nodes as d3.SimulationNodeDatum[])
   simulation.force<d3.ForceLink<any, any>>('link')?.links(store.links)
   simulation.alpha(1).restart()
@@ -190,8 +226,6 @@ const render = () => {
         const sy = d.source.y
         const tx = d.target.x
         const ty = d.target.y
-        // Cubic Bezier for vertical tree: M start C c1 c2 end
-        // Control points: vertical offset from start and end
         const midY = (sy + ty) / 2
         return `M${sx},${sy} C${sx},${midY} ${tx},${midY} ${tx},${ty}`
     })
@@ -293,18 +327,18 @@ onMounted(() => {
      }
 
      // Apply Styles
-     g.selectAll('.node-group rect, .node-group circle')
+     g.selectAll('.node-shape')
        .transition().duration(200)
        .attr('stroke', function(this: any) {
           const d = d3.select(this.parentNode).datum() as any
           const id = d.id
           
           if (isSynth) {
-             return highlightIds.has(id) ? '#3b82f6' : '#334155'
+             return highlightIds.has(id) ? 'var(--color-node-highlight-synth)' : 'var(--color-node-inactive)'
           }
-          if (id === activeId) return '#fcd34d' // Gold
-          if (highlightIds.has(id)) return '#fff' // Ancestor
-          return '#334155' // Inactive
+          if (id === activeId) return 'var(--color-node-active)' // Active Note
+          if (highlightIds.has(id)) return 'var(--color-node-ancestor)' // Ancestor
+          return 'var(--color-node-inactive)' // Inactive
        })
        .attr('stroke-width', function(this: any) {
           const d = d3.select(this.parentNode).datum() as any
@@ -326,8 +360,8 @@ onMounted(() => {
            // Logic: Link is active if both nodes are highlighted AND it's on the path?
            // If we just check highlightIds, any link between two ancestors is active.
            // This is correct contextually.
-           if (highlightIds.has(sId) && highlightIds.has(tId)) return '#94a3b8'
-           return '#334155'
+           if (highlightIds.has(sId) && highlightIds.has(tId)) return 'var(--color-link-active)'
+           return 'var(--color-link-inactive)'
        })
        .attr('stroke-opacity', (d: any) => {
            const sId = typeof d.source === 'object' ? d.source.id : d.source
