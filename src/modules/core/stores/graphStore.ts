@@ -22,15 +22,12 @@ export const useGraphStore = defineStore('graph', () => {
 
     const nodes = ref<GraphNode[]>([
         { id: 'root', type: 'user', label: 'Start' },
-        { id: 'ai-1', type: 'ai', label: 'Hello! How can I help you today?' },
     ])
 
-    const links = ref<GraphLink[]>([
-        { source: 'root', target: 'ai-1' },
-    ])
+    const links = ref<GraphLink[]>([])
 
     // Set initial active node
-    activeNodeId.value = 'ai-1'
+    activeNodeId.value = 'root'
 
     const setActiveNode = (id: string | null) => {
         if (isSynthesisMode.value) return // Disable single select in synthesis mode? Or maybe clicking toggles selection? 

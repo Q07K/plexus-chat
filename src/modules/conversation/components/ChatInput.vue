@@ -64,10 +64,17 @@ const handleSubmit = async () => {
         const contextText = leafNodes.map(n => `- ${n.label}`).join('\n')
         const prompt = `Here are several conversation threads contexts:\n${contextText}\n\nBased on these, please answer the following synthesis question:\n${inputValue}`
         
-        const response = await llmStore.generateResponse([{ role: 'user', content: prompt }])
+        const response = await llmStore.generateResponse(
+            [{ role: 'user', content: prompt }],
+            (chunk) => {
+                const node = store.nodes.find(n => n.id === synthAnswerId)
+                if (node) node.label = chunk
+            }
+        )
         
-        // Update Label
-        synthAnswer.label = response
+        // Final Update (ensure consistency)
+        const finalNode = store.nodes.find(n => n.id === synthAnswerId)
+        if (finalNode) finalNode.label = response
 
     } else {
         // NORMAL MODE
@@ -110,10 +117,17 @@ const handleSubmit = async () => {
         store.setActiveNode(aiNodeId)
 
         // 4. Call LLM
-        const response = await llmStore.generateResponse(messages)
+        const response = await llmStore.generateResponse(
+            messages,
+            (chunk) => {
+                const node = store.nodes.find(n => n.id === aiNodeId)
+                if (node) node.label = chunk
+            }
+        )
 
         // 5. Update AI Node
-        aiNode.label = response
+        const finalCtxNode = store.nodes.find(n => n.id === aiNodeId)
+        if (finalCtxNode) finalCtxNode.label = response
     }
   } catch (err: any) {
       console.error(err)

@@ -10,7 +10,7 @@ export interface ModelOption {
 }
 
 export const useLLMStore = defineStore('llm', () => {
-    // Persist keys in localStorage for convenience (In prod, use secure storage or rely on env/proxy, but this is a client-side app pattern)
+    // Persist keys in localStorage
     const openaiApiKey = ref(localStorage.getItem('plexus_openai_key') || '')
     const googleApiKey = ref(localStorage.getItem('plexus_google_key') || '')
 
@@ -41,9 +41,18 @@ export const useLLMStore = defineStore('llm', () => {
         localStorage.setItem('plexus_selected_model', modelId)
     }
 
-    const generateResponse = async (messages: { role: string, content: string }[]): Promise<string> => {
+    /**
+     * Generates a response using Streaming.
+     * Replaces the old generateResponse logic.
+     */
+    const generateResponse = async (
+        messages: { role: string, content: string }[],
+        onChunk?: (text: string) => void // Optional callback for streaming updates
+    ): Promise<string> => {
         const model = selectedModel.value
         if (!model) return 'Error: No model selected.'
+
+        let fullText = ''
 
         try {
             if (model.provider === 'openai') {
@@ -58,9 +67,10 @@ export const useLLMStore = defineStore('llm', () => {
                     body: JSON.stringify({
                         model: model.id,
                         messages: messages.map(m => ({
-                            role: m.role === 'user' ? 'user' : 'assistant', // Map 'ai'/'synthesis' to 'assistant'
+                            role: m.role === 'user' ? 'user' : 'assistant',
                             content: m.content
-                        }))
+                        })),
+                        stream: true // Enable Streaming
                     })
                 })
 
@@ -69,23 +79,47 @@ export const useLLMStore = defineStore('llm', () => {
                     throw new Error(err.error?.message || 'OpenAI API Error')
                 }
 
-                const data = await response.json()
-                return data.choices[0]?.message?.content || 'No response.'
+                if (!response.body) throw new Error('ReadableStream not supported')
+
+                const reader = response.body.getReader()
+                const decoder = new TextDecoder()
+
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+
+                    const chunk = decoder.decode(value)
+                    const lines = chunk.split('\n')
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6)
+                            if (data === '[DONE]') break
+
+                            try {
+                                const parsed = JSON.parse(data)
+                                const content = parsed.choices[0]?.delta?.content
+                                if (content) {
+                                    fullText += content
+                                    onChunk?.(fullText)
+                                }
+                            } catch (e) {
+                                // Ignore json parse errors for partial chunks
+                            }
+                        }
+                    }
+                }
 
             } else if (model.provider === 'google') {
                 if (!googleApiKey.value) throw new Error('Google API Key is missing')
-
-                // Gemini API format
-                // https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=YOUR_API_KEY
-                // Body: { contents: [{ parts: [{ text: "..." }] }] }
-                // Supports history? Yes, "contents" is an array of turns.
 
                 const contents = messages.map(m => ({
                     role: m.role === 'user' ? 'user' : 'model',
                     parts: [{ text: m.content }]
                 }))
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent?key=${googleApiKey.value}`, {
+                // Use streamGenerateContent
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:streamGenerateContent?key=${googleApiKey.value}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents })
@@ -96,17 +130,42 @@ export const useLLMStore = defineStore('llm', () => {
                     throw new Error(err.error?.message || 'Google API Error')
                 }
 
-                const data = await response.json()
-                // Safety check
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-                return text || 'Blocked by safety settings or no response.'
+                if (!response.body) throw new Error('ReadableStream not supported')
+
+                const reader = response.body.getReader()
+                const decoder = new TextDecoder()
+                let buffer = ''
+                let scannerIndex = 0
+
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+
+                    const chunk = decoder.decode(value, { stream: true })
+                    buffer += chunk
+
+                    const regex = /"text":\s*"((?:[^"\\]|\\.)*)"/g
+                    regex.lastIndex = scannerIndex // Start searching from where we left off
+
+                    let match
+                    while ((match = regex.exec(buffer)) !== null) {
+                        try {
+                            const textContent = JSON.parse(`"${match[1]}"`)
+                            fullText += textContent
+                            onChunk?.(fullText)
+                            scannerIndex = regex.lastIndex // Update usage
+                        } catch (e) {
+                            // Ignore partial/invalid escapes
+                        }
+                    }
+                }
             }
         } catch (error: any) {
             console.error(error)
-            return `Error: ${error.message}`
+            return fullText || `Error: ${error.message}`
         }
 
-        return 'Provider not supported.'
+        return fullText || 'No response.'
     }
 
     return {
