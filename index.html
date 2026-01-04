@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>temp_init</title>
+    <title>plexus-chat</title>
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        const errorContainer = document.createElement('div');
+        errorContainer.style.position = 'fixed';
+        errorContainer.style.top = '0';
+        errorContainer.style.left = '0';
+        errorContainer.style.width = '100%';
+        errorContainer.style.background = '#ffebee';
+        errorContainer.style.color = '#c62828';
+        errorContainer.style.padding = '20px';
+        errorContainer.style.zIndex = '99999';
+        errorContainer.style.whiteSpace = 'pre-wrap';
+        errorContainer.style.fontFamily = 'monospace';
+        errorContainer.innerText = `Error: ${message}\nChecked Source: ${source}\nLine: ${lineno}:${colno}\nStack: ${error ? error.stack : 'N/A'}`;
+        document.body.appendChild(errorContainer);
+        console.error('Global Error Caught:', message, error);
+      };
+    </script>
   </head>
   <body>
     <div id="app"></div>
