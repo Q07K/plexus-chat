@@ -38,14 +38,14 @@ const handleOverlayClick = () => {
                 :class="{ active: activeTab === 'general' }"
                 @click="activeTab = 'general'"
             >
-                General
+                {{ t('settings.tabs.general') }}
              </button>
              <button 
                 class="tab-btn" 
                 :class="{ active: activeTab === 'llm' }"
                 @click="activeTab = 'llm'"
             >
-                LLM Config
+                {{ t('settings.tabs.llm') }}
              </button>
         </div>
         
@@ -112,21 +112,21 @@ const handleOverlayClick = () => {
 
         <div v-if="activeTab === 'llm'" class="tab-content">
             <div class="section">
-                <h4>System Prompt</h4>
+                <h4>{{ t('settings.llm.systemPrompt') }}</h4>
                 <div class="input-group">
                     <textarea 
                         class="system-prompt-input"
                         :value="store.systemPrompt" 
                         @input="(e) => store.setSystemPrompt((e.target as HTMLTextAreaElement).value)"
-                        placeholder="You are a helpful assistant..."
+                        :placeholder="t('settings.llm.systemPromptPlaceholder')"
                     ></textarea>
                 </div>
             </div>
 
             <div class="section">
-                <h4>Parameters</h4>
+                <h4>{{ t('settings.llm.parameters') }}</h4>
                 <div class="input-group">
-                    <label>Temperature: {{ store.temperature }}</label>
+                    <label>{{ t('settings.llm.temperature') }}: {{ store.temperature }}</label>
                     <input 
                         type="range" 
                         min="0" 
@@ -137,7 +137,7 @@ const handleOverlayClick = () => {
                     />
                 </div>
                  <div class="input-group">
-                    <label>Top K: {{ store.topK }}</label>
+                    <label>{{ t('settings.llm.topK') }}: {{ store.topK }}</label>
                     <input 
                         type="range" 
                         min="1" 
@@ -233,7 +233,7 @@ const handleOverlayClick = () => {
 
 .input-group input {
   width: 100%;
-  background: rgba(15, 23, 42, 0.5); /* Darker slot */
+  background: var(--color-bg-input);
   border: 1px solid var(--color-border);
   padding: 0.75rem;
   border-radius: 8px;
@@ -341,7 +341,7 @@ const handleOverlayClick = () => {
 .system-prompt-input {
     width: 100%;
     height: 120px;
-    background: rgba(15, 23, 42, 0.5);
+    background: var(--color-bg-input);
     border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 0.75rem;

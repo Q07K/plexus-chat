@@ -42,6 +42,17 @@ export default {
         openaiKey: 'OpenAI API Key',
         googleKey: 'Google Gemini API Key',
         hint: 'Keys are stored locally in your browser.',
-        language: 'Language'
+        language: 'Language',
+        tabs: {
+            general: 'General',
+            llm: 'LLM Config'
+        },
+        llm: {
+            systemPrompt: 'System Prompt',
+            systemPromptPlaceholder: 'You are a helpful assistant...',
+            parameters: 'Parameters',
+            temperature: 'Temperature',
+            topK: 'Top K'
+        }
     }
 }

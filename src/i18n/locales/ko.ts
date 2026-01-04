@@ -42,6 +42,17 @@ export default {
         openaiKey: 'OpenAI API 키',
         googleKey: 'Google Gemini API 키',
         hint: '키는 브라우저에 로컬로 저장됩니다.',
-        language: '언어'
+        language: '언어',
+        tabs: {
+            general: '일반',
+            llm: 'LLM 설정'
+        },
+        llm: {
+            systemPrompt: '시스템 프롬프트',
+            systemPromptPlaceholder: '유용한 도우미입니다...',
+            parameters: '파라미터',
+            temperature: '온도 (Temperature)',
+            topK: 'Top K'
+        }
     }
 }

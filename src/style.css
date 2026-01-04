@@ -10,6 +10,7 @@
   /* Slate 800 */
   --color-bg-panel-transparent: rgba(15, 23, 42, 0.95);
   --color-bg-hover-glass: rgba(255, 255, 255, 0.1);
+  --color-bg-input: rgba(15, 23, 42, 0.5);
 
   /* Gradients */
   --color-bg-gradient-start: #1e293b;
@@ -153,6 +154,7 @@
   /* Amber 600 (Darker active to see on white) */
   --color-node-ancestor: #0f172a;
   /* Slate 900 (Dark ancestor on light bg) */
+  --color-bg-input: #ffffff;
 }
 
 html,
