@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export interface GraphNode {
     id: string
-    type: 'user' | 'ai' | 'synthesis'
+    type: 'user' | 'ai' | 'synthesis' | 'system'
     label: string
     x?: number
     y?: number
@@ -21,7 +21,7 @@ export const useGraphStore = defineStore('graph', () => {
     const isSynthesisMode = ref(false)
 
     const nodes = ref<GraphNode[]>([
-        { id: 'root', type: 'user', label: 'Start' },
+        { id: 'root', type: 'system', label: 'System' },
     ])
 
     const links = ref<GraphLink[]>([])

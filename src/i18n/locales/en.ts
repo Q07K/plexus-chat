@@ -3,6 +3,7 @@ export default {
         user: 'User',
         ai: 'AI',
         synthesis: 'Synthesis',
+        system: 'System',
         active: 'Active'
     },
     synthesis: {

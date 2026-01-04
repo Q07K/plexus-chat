@@ -40,7 +40,10 @@ const messages = computed(() => {
       currId = null
     }
   }
-  return thread
+  // Filter out Root if it is of type 'synthesis' with label "System" (or just checked by ID if fixed)
+  // Actually, specs say "Change root node type to system... and remove from chat"
+  // So we filter it here.
+  return thread.filter(t => t.id !== 'root')
 })
 
 // Auto scroll to bottom

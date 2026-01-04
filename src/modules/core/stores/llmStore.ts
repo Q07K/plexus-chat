@@ -15,6 +15,9 @@ export const useLLMStore = defineStore('llm', () => {
     const googleApiKey = ref(localStorage.getItem('plexus_google_key') || '')
 
     const selectedModelId = ref(localStorage.getItem('plexus_selected_model') || 'gemini-pro')
+    const systemPrompt = ref(localStorage.getItem('plexus_system_prompt') || '')
+    const temperature = ref(Number(localStorage.getItem('plexus_temperature') || 0.7))
+    const topK = ref(Number(localStorage.getItem('plexus_top_k') || 40))
 
     const availableModels: ModelOption[] = [
         { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
@@ -39,6 +42,21 @@ export const useLLMStore = defineStore('llm', () => {
     const setModel = (modelId: string) => {
         selectedModelId.value = modelId
         localStorage.setItem('plexus_selected_model', modelId)
+    }
+
+    const setSystemPrompt = (prompt: string) => {
+        systemPrompt.value = prompt
+        localStorage.setItem('plexus_system_prompt', prompt)
+    }
+
+    const setTemperature = (temp: number) => {
+        temperature.value = temp
+        localStorage.setItem('plexus_temperature', String(temp))
+    }
+
+    const setTopK = (k: number) => {
+        topK.value = k
+        localStorage.setItem('plexus_top_k', String(k))
     }
 
     /**
@@ -66,10 +84,14 @@ export const useLLMStore = defineStore('llm', () => {
                     },
                     body: JSON.stringify({
                         model: model.id,
-                        messages: messages.map(m => ({
-                            role: m.role === 'user' ? 'user' : 'assistant',
-                            content: m.content
-                        })),
+                        messages: [
+                            ...(systemPrompt.value ? [{ role: 'system', content: systemPrompt.value }] : []),
+                            ...messages.map(m => ({
+                                role: m.role === 'user' ? 'user' : 'assistant',
+                                content: m.content
+                            }))
+                        ],
+                        temperature: temperature.value,
                         stream: true // Enable Streaming
                     })
                 })
@@ -113,16 +135,36 @@ export const useLLMStore = defineStore('llm', () => {
             } else if (model.provider === 'google') {
                 if (!googleApiKey.value) throw new Error('Google API Key is missing')
 
-                const contents = messages.map(m => ({
-                    role: m.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: m.content }]
-                }))
+                const contents = [
+                    ...(systemPrompt.value ? [{
+                        role: 'user',
+                        parts: [{ text: `System Prompt: ${systemPrompt.value}` }] // Gemini 1.5 doesn't have system role in chat history easily via REST v1beta sometimes, but let's try standard way or prepend.
+                        // Actually, 'system' role is supported in new models.
+                        // But for broad compatibility in v1beta REST, prepending is safer or using 'model' with 'system instruction'.
+                        // Let's just prepend to first message or separate turn?
+                        // Simple approach: Prepend to context.
+                    }] : []),
+                    ...messages.map(m => ({
+                        role: m.role === 'user' ? 'user' : 'model',
+                        parts: [{ text: m.content }]
+                    }))
+                ]
+
+                // NOTE: For Gemini, System Instructions are passed separately in valid config usually, 
+                // but here sticking to simple chat turns.
+                // If prepended as a 'user' turn saying "System Prompt: ...", it works reasonably well.
 
                 // Use streamGenerateContent
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.id}:streamGenerateContent?key=${googleApiKey.value}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents })
+                    body: JSON.stringify({
+                        contents,
+                        generationConfig: {
+                            temperature: temperature.value,
+                            topK: topK.value
+                        }
+                    })
                 })
 
                 if (!response.ok) {
@@ -177,6 +219,12 @@ export const useLLMStore = defineStore('llm', () => {
         setOpenaiKey,
         setGoogleKey,
         setModel,
-        generateResponse
+        generateResponse,
+        systemPrompt,
+        temperature,
+        topK,
+        setSystemPrompt,
+        setTemperature,
+        setTopK
     }
 })

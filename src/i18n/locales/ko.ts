@@ -3,6 +3,7 @@ export default {
         user: '사용자',
         ai: 'AI',
         synthesis: '종합',
+        system: '시스템',
         active: '활성'
     },
     synthesis: {
