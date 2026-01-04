@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, watch } from 'vue'
+import { computed, ref, nextTick, watch, onMounted } from 'vue'
 import { useGraphStore, type GraphNode } from '@/modules/core/stores/graphStore'
 import { useLLMStore } from '@/modules/core/stores/llmStore'
 import ChatInput from './ChatInput.vue'
@@ -46,14 +46,42 @@ const messages = computed(() => {
   return thread.filter(t => t.id !== 'root')
 })
 
-// Auto scroll to bottom
-watch(messages, () => {
-  nextTick(() => {
+// Scroll handling
+const lastActiveNodeId = ref(store.activeNodeId)
+const isUserAtBottom = ref(true)
+
+const scrollToBottom = () => {
     if (chatContainer.value) {
-      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+        chatContainer.value.scrollTop = chatContainer.value.scrollHeight
     }
-  })
+}
+
+const handleScroll = () => {
+  const container = chatContainer.value
+  if (!container) return
+
+  const { scrollTop, scrollHeight, clientHeight } = container
+  // Ultra-strict threshold (5px) to prevent unwanted snapping when user scrolls up just a little
+  isUserAtBottom.value = Math.abs(scrollHeight - clientHeight - scrollTop) <= 5
+}
+
+watch(messages, async () => {
+  const currentId = store.activeNodeId
+  // Detect if we switched threads (active node changed completely)
+  const isNewThread = currentId !== lastActiveNodeId.value
+  lastActiveNodeId.value = currentId
+
+  await nextTick()
+
+  // If user *was* at bottom, OR it's a new thread -> scroll to bottom
+  if (isNewThread || isUserAtBottom.value) {
+    scrollToBottom()
+  }
 }, { deep: true })
+
+onMounted(() => {
+    scrollToBottom()
+})
 </script>
 
 <template>
@@ -79,7 +107,7 @@ watch(messages, () => {
       </div>
     </div>
     
-    <div class="messages-list" ref="chatContainer">
+    <div class="messages-list" ref="chatContainer" @scroll="handleScroll">
       <div 
         v-for="msg in messages" 
         :key="msg.id"
