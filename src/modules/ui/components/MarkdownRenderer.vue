@@ -29,6 +29,7 @@ const renderedMarkdown = computed(() => {
 }
 
 .markdown-content p {
+  margin-top: 0;
   margin-bottom: 0.75rem;
 }
 
