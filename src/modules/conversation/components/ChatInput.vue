@@ -202,7 +202,7 @@ const handleSubmit = async () => {
 .input-wrapper {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   background: var(--color-bg-panel);
   border: 1px solid var(--color-border);
   border-radius: 16px;

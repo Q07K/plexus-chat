@@ -5,6 +5,7 @@ import { useLLMStore } from '@/modules/core/stores/llmStore'
 import ChatInput from './ChatInput.vue'
 import SettingsModal from '@/modules/ui/components/SettingsModal.vue'
 import ThemeToggle from '@/modules/ui/components/ThemeToggle.vue'
+import MarkdownRenderer from '@/modules/ui/components/MarkdownRenderer.vue'
 
 const store = useGraphStore()
 const llmStore = useLLMStore()
@@ -154,7 +155,7 @@ onMounted(() => {
           <span v-else>S</span>
         </div>
         <div class="bubble">
-          {{ msg.label }}
+          <MarkdownRenderer :content="msg.label" />
         </div>
       </div>
       
@@ -313,8 +314,13 @@ onMounted(() => {
 }
 
 /* User Alignment? No, linear context usually left-aligned in standard LLM UI with different bubbles */
+.message-item:first-child {
+  margin-top: auto;
+}
+
 .message-item.user {
   flex-direction: row-reverse;
+  align-items: flex-end;
 }
 
 .avatar {
