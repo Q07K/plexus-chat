@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, watch, onMounted } from 'vue'
+import { computed, ref, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useGraphStore, type GraphNode } from '@/modules/core/stores/graphStore'
 import { useLLMStore } from '@/modules/core/stores/llmStore'
 import ChatInput from './ChatInput.vue'
@@ -10,6 +10,38 @@ const store = useGraphStore()
 const llmStore = useLLMStore()
 const chatContainer = ref<HTMLElement | null>(null)
 const isSettingsOpen = ref(false)
+
+// Resizing logic
+const panelWidth = ref(400)
+const isDragging = ref(false)
+
+const startResize = () => {
+  isDragging.value = true
+  document.addEventListener('mousemove', doResize)
+  document.addEventListener('mouseup', stopResize)
+  document.body.style.userSelect = 'none'
+  document.body.style.cursor = 'ew-resize'
+}
+
+const doResize = (e: MouseEvent) => {
+  if (!isDragging.value) return
+  const newWidth = window.innerWidth - e.clientX
+  if (newWidth > 300 && newWidth < 1200) {
+     panelWidth.value = newWidth
+  }
+}
+
+const stopResize = () => {
+  isDragging.value = false
+  document.removeEventListener('mousemove', doResize)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.userSelect = ''
+  document.body.style.cursor = ''
+}
+
+onUnmounted(() => {
+  stopResize()
+})
 
 // Computed: Traverse keys back from activeNode to root to build "Current Thread"
 const messages = computed(() => {
@@ -85,7 +117,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="chat-panel">
+  <div class="chat-panel" :style="{ width: panelWidth + 'px' }">
+    <div class="resize-handle" @mousedown.prevent="startResize" :class="{ active: isDragging }"></div>
     <div class="header">
       <div class="header-content">
         <h2>{{ $t('chat.thread') }}</h2>
@@ -140,11 +173,9 @@ onMounted(() => {
 
 <style scoped>
 .chat-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 400px;
+  position: relative;
   height: 100%;
+  flex-shrink: 0;
   background: var(--color-bg-panel-transparent);
   border-left: 1px solid var(--color-border);
   display: flex;
@@ -153,6 +184,35 @@ onMounted(() => {
   backdrop-filter: blur(10px);
 }
 
+.resize-handle {
+  position: absolute;
+  left: -5px; /* Increase hit area */
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  z-index: 20;
+  /* Optional: visual indicator on hover */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Visual line for the handle, only visible on hover or dragging */
+.resize-handle::after {
+  content: '';
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.resize-handle:hover::after,
+.resize-handle.active::after {
+  background: var(--color-primary); /* Or a recognizable drag color */
+}
+
+/* ... existing styles ... */
 .header {
   padding: 1.5rem;
   border-bottom: 1px solid var(--color-border);
