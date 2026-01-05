@@ -320,7 +320,7 @@ onMounted(() => {
 
 .message-item.user {
   flex-direction: row-reverse;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .avatar {
