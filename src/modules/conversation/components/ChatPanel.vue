@@ -295,10 +295,18 @@ onMounted(() => {
 .messages-list {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 0 1.5rem; /* Remove bottom padding to allow content to slide under input fade */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-height: 0; /* Important for flex child with scroll */
+}
+
+/* Add breathing room at the bottom of the list equal to the input area roughly */
+.messages-list::after {
+    content: '';
+    display: block;
+    min-height: 20px; /* Small buffer */
 }
 
 .message-item {
@@ -384,5 +392,22 @@ onMounted(() => {
   color: var(--color-text-secondary);
   margin-top: 3rem;
   font-size: 0.9rem;
+}
+
+.input-area {
+  position: relative;
+  /* Add a gradient fade to the top */
+}
+
+.input-area::before {
+  content: '';
+  position: absolute;
+  top: -40px; /* Height of the fade */
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--color-bg-panel-transparent));
+  pointer-events: none;
+  z-index: 5;
 }
 </style>
