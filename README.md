@@ -2,6 +2,18 @@
 
 > **"Linear Thought to Organic Network"** (선형적 사고에서 유기적 네트워크로)
 
+<div align="center">
+
+  <a href="https://q07k.github.io/plexus-chat">
+    <img src="https://img.shields.io/badge/Live%20Demo-Visit%20Site-62aa62?style=for-the-badge&logo=github&logoColor=white" alt="Live Demo" />
+  </a>
+  &nbsp;
+  <a href="https://youtu.be/DKdg9bM5OQE?si=x8p-S4BkNS7sk7-W">
+    <img src="https://img.shields.io/badge/YouTube-Concept%20%26%20Walkthrough-dd6262?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube Video" />
+  </a>
+
+</div>
+
 ## 1. 서비스 개요
 **Plexus**는 '망', '신경 다발'이라는 어원에서 알 수 있듯이, 척추 신경 등이 복잡하게 얽혀 있는 네트워크를 의미합니다.
 </br>
