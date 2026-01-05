@@ -11,6 +11,20 @@ const input = ref('')
 const isLoading = ref(false)
 
 const generateId = () => Math.random().toString(36).substr(2, 9)
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+
+const autoResize = () => {
+  if (!textareaRef.value) return
+  textareaRef.value.style.height = 'auto'
+  textareaRef.value.style.height = textareaRef.value.scrollHeight + 'px'
+}
+
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    handleSubmit()
+  }
+}
 
 const handleSubmit = async () => {
   if (!input.value.trim() || isLoading.value) return
@@ -24,6 +38,9 @@ const handleSubmit = async () => {
 
   const inputValue = input.value
   input.value = '' // Clear immediately
+  if (textareaRef.value) {
+    textareaRef.value.style.height = 'auto'
+  }
   isLoading.value = true
 
   try {
@@ -159,13 +176,15 @@ const handleSubmit = async () => {
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
       </button>
-      <input 
+      <textarea
         v-model="input" 
-        @keydown.enter="handleSubmit"
-        type="text" 
+        @keydown="handleKeydown"
         :placeholder="store.isSynthesisMode ? t('synthesis.placeholder') : t('chat.input.placeholder')" 
         class="chat-input"
-      />
+        rows="1"
+        ref="textareaRef"
+        @input="autoResize"
+      ></textarea>
       <button @click="handleSubmit" class="send-btn">
         <span class="icon">➔</span>
       </button>
@@ -183,11 +202,11 @@ const handleSubmit = async () => {
 .input-wrapper {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   background: var(--color-bg-panel);
   border: 1px solid var(--color-border);
-  border-radius: 9999px;
-  padding: 0.5rem;
+  border-radius: 16px;
+  padding: 0.75rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all var(--transition-fast);
 }
@@ -210,7 +229,8 @@ const handleSubmit = async () => {
   border: none;
   cursor: pointer;
   color: var(--color-text-secondary);
-  padding: 0.5rem;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -218,6 +238,7 @@ const handleSubmit = async () => {
   transition: all var(--transition-fast);
   margin-right: 0.5rem;
   flex-shrink: 0;
+  padding: 0; /* Reset padding to rely on fixed w/h key centering */
 }
 
 .synthesis-toggle-btn:hover {
@@ -252,6 +273,13 @@ const handleSubmit = async () => {
   font-size: 1rem;
   outline: none;
   min-height: 24px;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.5; /* 24px per line */
+  padding: 8px 0; /* Adds 16px total, making single line ~40px high to match buttons */
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .chat-input::placeholder {
@@ -271,6 +299,7 @@ const handleSubmit = async () => {
   margin-left: 0.5rem;
   transition: background-color var(--transition-fast);
   flex-shrink: 0; /* Prevent button from being clipped */
+  padding: 0;
 }
 
 .send-btn:hover {
