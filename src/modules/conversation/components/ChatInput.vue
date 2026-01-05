@@ -166,16 +166,6 @@ const handleSubmit = async () => {
 <template>
   <div class="chat-input-container">
     <div class="input-wrapper" :class="{ 'synthesis-active': store.isSynthesisMode }">
-      <button 
-        @click="store.toggleSynthesisMode()" 
-        class="synthesis-toggle-btn"
-        :class="{ active: store.isSynthesisMode }"
-        :title="t('synthesis.toggleTooltip')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-        </svg>
-      </button>
       <textarea
         v-model="input" 
         @keydown="handleKeydown"
@@ -185,9 +175,29 @@ const handleSubmit = async () => {
         ref="textareaRef"
         @input="autoResize"
       ></textarea>
-      <button @click="handleSubmit" class="send-btn">
-        <span class="icon">➔</span>
-      </button>
+      
+      <div class="input-footer">
+        <div class="left-actions">
+            <button 
+                @click="store.toggleSynthesisMode()" 
+                class="synthesis-toggle-btn"
+                :class="{ active: store.isSynthesisMode }"
+                :title="t('synthesis.toggleTooltip')"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+            </button>
+        </div>
+        <div class="right-actions">
+             <button @click="handleSubmit" class="send-btn" :disabled="!input.trim() && !isLoading">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -195,78 +205,42 @@ const handleSubmit = async () => {
 <style scoped>
 .chat-input-container {
   width: 100%;
-  padding: 1rem;
-  box-sizing: border-box; /* Fix width + padding calculation */
+  padding: 1rem 1.5rem 1.5rem 1.5rem; /* More spacing around */
+  box-sizing: border-box;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .input-wrapper {
   position: relative;
   display: flex;
-  align-items: center;
-  background: var(--color-bg-panel);
+  flex-direction: column; /* Stack vertically */
+  background: var(--color-bg-panel); /* Or a slightly lighter/input-specific bg */
   border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 0.75rem;
+  border-radius: 24px; /* More rounded like Gemini */
+  padding: 1rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all var(--transition-fast);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-wrapper:focus-within {
   box-shadow: 0 0 0 2px var(--color-user);
+  background: var(--color-bg-primary); /* Slight highlight */
 }
 
 .input-wrapper.synthesis-active {
   border-color: var(--color-synthesis);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.1);
 }
 
 .input-wrapper.synthesis-active:focus-within {
   box-shadow: 0 0 0 2px var(--color-synthesis);
 }
 
-.synthesis-toggle-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-secondary);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-  margin-right: 0.5rem;
-  flex-shrink: 0;
-  padding: 0; /* Reset padding to rely on fixed w/h key centering */
-}
-
-.synthesis-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--color-text-primary);
-}
-
-.synthesis-toggle-btn.active {
-  color: var(--color-synthesis);
-  background: rgba(245, 158, 11, 0.1);
-}
-
-/* Pulse animation for active synthesis */
-@keyframes pulse-synthesis {
-  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-}
-
-.synthesis-toggle-btn.active {
-  animation: pulse-synthesis 2s infinite;
-}
-
-
-/* CSS Cleaned up */
-
 .chat-input {
-  flex: 1;
+  width: 100%;
   background: transparent;
   border: none;
   color: var(--color-text-primary);
@@ -275,39 +249,100 @@ const handleSubmit = async () => {
   min-height: 24px;
   resize: none;
   font-family: inherit;
-  line-height: 1.5; /* 24px per line */
-  padding: 8px 0; /* Adds 16px total, making single line ~40px high to match buttons */
+  line-height: 1.5;
+  padding: 0 0 0.5rem 0; /* Space below text */
   margin: 0;
   max-height: 200px;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .chat-input::placeholder {
   color: var(--color-text-secondary);
 }
 
-.send-btn {
-  background: var(--color-user);
+/* Footer layout */
+.input-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.5rem;
+}
+
+.left-actions, .right-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Buttons */
+.synthesis-toggle-btn {
+  background: transparent; /* Unified with send-btn */
   border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.synthesis-toggle-btn:hover {
+  background: var(--color-bg-hover-glass);
+  color: var(--color-text-primary);
+}
+
+.synthesis-toggle-btn.active {
+  color: var(--color-synthesis);
+  background: rgba(245, 158, 11, 0.15);
+  animation: pulse-synthesis 2s infinite;
+}
+
+@keyframes pulse-synthesis {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.send-btn {
+  background: transparent;
+  border: none;
+  border-radius: 4px; /* Square/Icon style or Circle */
+  /* Gemini uses a clear icon on the right. Let's keep existing circle but maybe cleaner */
+  width: 36px; /* Match other buttons */
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-left: 0.5rem;
-  transition: background-color var(--transition-fast);
-  flex-shrink: 0; /* Prevent button from being clipped */
+  transition: all var(--transition-fast);
   padding: 0;
+  color: var(--color-text-secondary); /* Default disabled-ish look */
 }
 
-.send-btn:hover {
+/* Active send button state */
+.send-btn:not(:disabled) {
+    background: var(--color-user);
+    color: white;
+    border-radius: 50%; /* Circle when active */
+}
+
+.send-btn:disabled {
+    cursor: default;
+    /* Opacity removed to match Synthesis button color */
+}
+
+.send-btn:not(:disabled):hover {
   background: var(--color-user-hover);
 }
 
+/* Icon adjustments */
 .icon {
-  color: white;
   font-weight: bold;
+  font-size: 1.2rem;
 }
 </style>
