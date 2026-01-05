@@ -23,7 +23,7 @@ const contextMenu = ref({
 })
 
 const openContextMenu = (e: MouseEvent, msg: GraphNode) => {
-  if (msg.type !== 'ai') return
+  if (msg.type !== 'ai' && msg.type !== 'synthesis') return
   store.setActiveNode(msg.id)
   contextMenu.value = {
     visible: true,
