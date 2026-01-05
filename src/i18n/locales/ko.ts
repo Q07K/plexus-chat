@@ -33,7 +33,11 @@ export default {
             generation: '응답 생성 오류: '
         },
         thinking: '생각 중...',
-        synthesizing: '인사이트 종합 중...'
+        synthesizing: '인사이트 종합 중...',
+        contextMenu: {
+            copy: '복사',
+            saveImage: 'PNG로 저장'
+        }
     },
     settings: {
         title: '설정',

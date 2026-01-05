@@ -59,6 +59,22 @@ export const useLLMStore = defineStore('llm', () => {
         localStorage.setItem('plexus_top_k', String(k))
     }
 
+    const generateSummary = async (userText: string, aiText: string): Promise<string> => {
+        const prompt = `Summarize the following Q&A into a single concise paragraph (under 100 characters). The summary should capture the essence of the discussion for quick recall. If the content is in Korean, the summary must be in Korean.
+        
+Q: ${userText}
+A: ${aiText}
+
+Summary:`
+
+        // Use a lightweight call (non-streaming)
+        // reusing generateResponse but we might want to ensure we don't stream or just wait for it.
+        // generateResponse supports non-streaming if onChunk is undefined?
+        // Actually generateResponse uses streaming logic internally. We can just collect it.
+
+        return await generateResponse([{ role: 'user', content: prompt }])
+    }
+
     /**
      * Generates a response using Streaming.
      * Replaces the old generateResponse logic.
@@ -225,6 +241,7 @@ export const useLLMStore = defineStore('llm', () => {
         topK,
         setSystemPrompt,
         setTemperature,
-        setTopK
+        setTopK,
+        generateSummary
     }
 })

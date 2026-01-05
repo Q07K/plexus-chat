@@ -6,11 +6,124 @@ import ChatInput from './ChatInput.vue'
 import SettingsModal from '@/modules/ui/components/SettingsModal.vue'
 import ThemeToggle from '@/modules/ui/components/ThemeToggle.vue'
 import MarkdownRenderer from '@/modules/ui/components/MarkdownRenderer.vue'
+import html2canvas from 'html2canvas'
 
 const store = useGraphStore()
 const llmStore = useLLMStore()
 const chatContainer = ref<HTMLElement | null>(null)
 const isSettingsOpen = ref(false)
+
+// Context Menu State
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  targetElement: null as HTMLElement | null,
+  messageContent: ''
+})
+
+const openContextMenu = (e: MouseEvent, msg: GraphNode) => {
+  if (msg.type !== 'ai') return
+  store.setActiveNode(msg.id)
+  contextMenu.value = {
+    visible: true,
+    x: e.clientX,
+    y: e.clientY,
+    targetElement: e.currentTarget as HTMLElement,
+    messageContent: msg.label
+  }
+}
+
+const closeContextMenu = () => {
+  contextMenu.value.visible = false
+}
+
+const handleCopy = async () => {
+  if (!contextMenu.value.messageContent) return
+  try {
+    await navigator.clipboard.writeText(contextMenu.value.messageContent)
+  } catch (err) {
+    console.error('Failed to copy text:', err)
+  }
+  closeContextMenu()
+}
+
+const handleSaveImage = async () => {
+  const target = contextMenu.value.targetElement
+  if (!target) return
+  
+  try {
+    // Clone the element to avoid visual glitches or constraints during capture
+    const clone = target.cloneNode(true) as HTMLElement
+    const rect = target.getBoundingClientRect()
+    
+    // Set styles to ensure the clone renders correctly for capture
+    // We enforce a minimum width (e.g. 800px) for better readability in the saved image,
+    // especially for code blocks, but allow it to be wider if the user currently has a wide window.
+    const captureWidth = Math.max(rect.width, 800)
+    
+    Object.assign(clone.style, {
+      position: 'absolute',
+      left: '-9999px',
+      top: '0',
+      width: `${captureWidth}px`,
+      height: 'auto',
+      maxHeight: 'none',
+      overflow: 'visible',
+      zIndex: '-1',
+      // Ensure specific style props that might interfere are reset
+      transform: 'none',
+      transition: 'none',
+      opacity: '1',
+      background: 'transparent' // Parent background
+    })
+
+    // Append to body so it's not constrained by the chat panel's scroll or flex layout
+    document.body.appendChild(clone)
+    
+    const canvas = await html2canvas(clone, {
+      backgroundColor: null,
+      scale: 2, // Retain high quality
+      logging: false, // Clean console
+      useCORS: true,
+      onclone: (_clonedDoc, element) => {
+          const el = element as HTMLElement
+          el.style.height = 'auto'
+          el.style.fontVariantLigatures = 'no-common-ligatures'
+          
+          // Remove box-shadow to prevent rendering artifacts
+          const bubble = el.querySelector('.bubble') as HTMLElement
+          if (bubble) {
+             bubble.style.boxShadow = 'none'
+          }
+
+          // Modify inline code styles to avoid "opaque block" look
+          // We remove the background and use a subtle border instead for cleaner capture
+          const codeElements = el.querySelectorAll('.markdown-content code')
+          codeElements.forEach((node) => {
+             const code = node as HTMLElement
+             // Apply only to inline code, not code blocks within <pre>
+             if (code.parentElement?.tagName !== 'PRE') {
+                 code.style.backgroundColor = 'transparent'
+                 code.style.border = '1px solid rgba(127, 127, 127, 0.4)'
+                 code.style.borderRadius = '3px'
+             }
+          })
+      }
+    })
+
+    // Clean up
+    document.body.removeChild(clone)
+
+    const link = document.createElement('a')
+    link.download = `plexus_ai_response_${Date.now()}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  } catch (err) {
+    console.error('Failed to save image:', err)
+  }
+  closeContextMenu()
+}
 
 // Resizing logic
 const panelWidth = ref(400)
@@ -42,6 +155,7 @@ const stopResize = () => {
 
 onUnmounted(() => {
   stopResize()
+  document.removeEventListener('click', closeContextMenu)
 })
 
 // Computed: Traverse keys back from activeNode to root to build "Current Thread"
@@ -114,6 +228,7 @@ watch(messages, async () => {
 
 onMounted(() => {
     scrollToBottom()
+    document.addEventListener('click', closeContextMenu)
 })
 </script>
 
@@ -148,7 +263,9 @@ onMounted(() => {
         class="message-item"
         :class="msg.type"
         @click="store.setActiveNode(msg.id)"
+        @contextmenu.prevent="openContextMenu($event, msg)"
       >
+
         <div class="avatar">
           <span v-if="msg.type === 'user'">U</span>
           <span v-else-if="msg.type === 'ai'">AI</span>
@@ -169,6 +286,23 @@ onMounted(() => {
     </div>
     
     <SettingsModal :isOpen="isSettingsOpen" @close="isSettingsOpen = false" />
+
+    <!-- Context Menu -->
+    <Teleport to="body">
+      <div 
+        v-if="contextMenu.visible" 
+        class="context-menu" 
+        :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
+        @click.stop
+      >
+        <div class="menu-item" @click="handleCopy">
+          {{ $t('chat.contextMenu.copy') }}
+        </div>
+        <div class="menu-item" @click="handleSaveImage">
+          {{ $t('chat.contextMenu.saveImage') }}
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -409,5 +543,29 @@ onMounted(() => {
   background: linear-gradient(to bottom, transparent, var(--color-bg-panel-transparent));
   pointer-events: none;
   z-index: 5;
+}
+
+.context-menu {
+  position: fixed;
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  min-width: 150px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.menu-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  transition: background 0.2s;
+}
+
+.menu-item:hover {
+  background: var(--color-bg-hover-glass);
 }
 </style>

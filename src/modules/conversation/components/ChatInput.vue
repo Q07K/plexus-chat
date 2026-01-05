@@ -144,7 +144,14 @@ const handleSubmit = async () => {
 
         // 5. Update AI Node
         const finalCtxNode = store.nodes.find(n => n.id === aiNodeId)
-        if (finalCtxNode) finalCtxNode.label = response
+        if (finalCtxNode) {
+             finalCtxNode.label = response
+             // 6. Generate Summary (Background)
+             llmStore.generateSummary(inputValue, response).then(summary => {
+                 const node = store.nodes.find(n => n.id === aiNodeId)
+                 if (node) node.summary = summary
+             }).catch(err => console.error('Summary generation failed:', err))
+        }
     }
   } catch (err: any) {
       console.error(err)

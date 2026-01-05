@@ -3,6 +3,7 @@ import { onMounted, ref, onUnmounted, watchEffect } from 'vue'
 import * as d3 from 'd3'
 import { useResizeObserver } from '@vueuse/core'
 import { useGraphStore } from '../stores/graphStore'
+import MarkdownRenderer from '@/modules/ui/components/MarkdownRenderer.vue'
 
 /**
  * GraphCanvas.vue
@@ -16,6 +17,13 @@ import { useGraphStore } from '../stores/graphStore'
 const containerRef = ref<HTMLElement | null>(null)
 const svgRef = ref<SVGSVGElement | null>(null)
 
+// Tooltip State
+const tooltip = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  content: ''
+})
 
 const store = useGraphStore()
 
@@ -241,6 +249,25 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
         store.setActiveNode(d.id)
         event.stopPropagation() // Prevent zoom click
       })
+      .on('mouseenter', (event, d: any) => {
+          if (d.summary) {
+              tooltip.value = {
+                  visible: true,
+                  x: event.clientX + 15,
+                  y: event.clientY + 15,
+                  content: d.summary
+              }
+          }
+      })
+      .on('mousemove', (event) => {
+          if (tooltip.value.visible) {
+             tooltip.value.x = event.clientX + 15
+             tooltip.value.y = event.clientY + 15
+          }
+      })
+      .on('mouseleave', () => {
+          tooltip.value.visible = false
+      })
 
   // Re-Apply simulation for new nodes
   simulation.nodes(store.nodes as d3.SimulationNodeDatum[])
@@ -408,6 +435,16 @@ onUnmounted(() => {
 <template>
   <div ref="containerRef" class="graph-container">
     <svg ref="svgRef" class="graph-svg"></svg>
+    
+    <Teleport to="body">
+       <div 
+         v-if="tooltip.visible" 
+         class="graph-tooltip"
+         :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px' }"
+       >
+         <MarkdownRenderer :content="tooltip.content" />
+       </div>
+    </Teleport>
   </div>
 </template>
 
@@ -430,5 +467,20 @@ onUnmounted(() => {
 
 .graph-svg:active {
   cursor: grabbing;
+}
+
+.graph-tooltip {
+  position: fixed;
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  max-width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  pointer-events: none; /* Let events pass through so we can move mouse */
+  z-index: 9999;
+  backdrop-filter: blur(10px);
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
 }
 </style>

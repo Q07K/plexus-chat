@@ -33,7 +33,11 @@ export default {
             generation: 'Error generating response: '
         },
         thinking: 'Thinking...',
-        synthesizing: 'Synthesizing insights...'
+        synthesizing: 'Synthesizing insights...',
+        contextMenu: {
+            copy: 'Copy',
+            saveImage: 'Save as PNG'
+        }
     },
     settings: {
         title: 'Settings',

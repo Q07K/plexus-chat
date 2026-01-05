@@ -5,6 +5,7 @@ export interface GraphNode {
     id: string
     type: 'user' | 'ai' | 'synthesis' | 'system'
     label: string
+    summary?: string
     x?: number
     y?: number
     fx?: number | null
