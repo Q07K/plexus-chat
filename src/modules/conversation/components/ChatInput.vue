@@ -205,7 +205,7 @@ const handleSubmit = async () => {
 <style scoped>
 .chat-input-container {
   width: 100%;
-  padding: 1rem 1.5rem 1.5rem 1.5rem; /* More spacing around */
+  padding: 0 1.5rem 1.5rem 1.5rem; /* Remove top padding */
   box-sizing: border-box;
   max-width: 900px;
   margin: 0 auto;
@@ -219,7 +219,7 @@ const handleSubmit = async () => {
   border: 1px solid var(--color-border);
   border-radius: 24px; /* More rounded like Gemini */
   padding: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   transition: all var(--transition-fast);
   width: 100%;
   box-sizing: border-box;
