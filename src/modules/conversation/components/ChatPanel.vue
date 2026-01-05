@@ -89,7 +89,11 @@ const handleSaveImage = async () => {
       onclone: (_clonedDoc, element) => {
           const el = element as HTMLElement
           el.style.height = 'auto'
-          el.style.fontVariantLigatures = 'no-common-ligatures'
+          // Fix for text overlapping issue (especially with CJK characters on Windows)
+          el.style.letterSpacing = 'normal'
+          el.style.textRendering = 'auto'
+          el.style.fontVariantLigatures = 'none'
+          el.style.fontFeatureSettings = 'normal'
           
           // Remove box-shadow to prevent rendering artifacts
           const bubble = el.querySelector('.bubble') as HTMLElement
