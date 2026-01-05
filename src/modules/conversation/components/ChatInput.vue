@@ -209,6 +209,8 @@ const handleSubmit = async () => {
   box-sizing: border-box;
   max-width: 900px;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
 .input-wrapper {
