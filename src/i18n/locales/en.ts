@@ -51,7 +51,16 @@ export default {
         language: 'Language',
         tabs: {
             general: 'General',
-            llm: 'LLM Config'
+            llm: 'LLM Config',
+            data: 'Storage'
+        },
+        data: {
+            title: 'Backup & Restore',
+            export: 'Export Conversation',
+            import: 'Import Conversation',
+            desc: 'Save your current conversation graph to a file or load a previous one.',
+            confirmLoad: 'This will replace your current conversation. Are you sure?',
+            loadSuccess: 'Conversation loaded successfully!'
         },
         llm: {
             systemPrompt: 'System Prompt',

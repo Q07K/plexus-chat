@@ -51,7 +51,16 @@ export default {
         language: '언어',
         tabs: {
             general: '일반',
-            llm: 'LLM 설정'
+            llm: 'LLM 설정',
+            data: '데이터'
+        },
+        data: {
+            title: '백업 및 복구',
+            export: '대화 내보내기',
+            import: '대화 불러오기',
+            desc: '현재 대화 구성을 파일로 저장하거나 불러옵니다.',
+            confirmLoad: '현재 대화가 대체됩니다. 계속하시겠습니까?',
+            loadSuccess: '대화를 성공적으로 불러왔습니다!'
         },
         llm: {
             systemPrompt: '시스템 프롬프트',

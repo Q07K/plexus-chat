@@ -165,6 +165,15 @@ export const useGraphStore = defineStore('graph', () => {
         return thread
     }
 
+    const loadGraph = (newNodes: GraphNode[], newLinks: GraphLink[]) => {
+        nodes.value = newNodes
+        links.value = newLinks
+        activeNodeId.value = 'root'
+        selectedNodeIds.value = ['root']
+        lastSelectedNodeId.value = 'root'
+        isSynthesisMode.value = false
+    }
+
     return {
         nodes,
         links,
@@ -176,6 +185,7 @@ export const useGraphStore = defineStore('graph', () => {
         handleNodeClick,
         addNode,
         addLink,
-        getThread
+        getThread,
+        loadGraph
     }
 })
