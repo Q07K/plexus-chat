@@ -105,21 +105,18 @@
   /* Slate 500 */
   --color-text-inverse: #f8fafc;
 
-  /* Brand / Semantic Colors - Adjusted for contrast if needed,
-     but standard Indigo/Emerald/Amber 500 usually work on white too.
-     Maybe darken slightly for better text contrast/border usage? */
-  --color-user: #4f46e5;
-  /* Indigo 600 */
-  --color-user-hover: #4338ca;
-  /* Indigo 700 */
+  /* Brand / Semantic Colors - Using the same 500 shades as dark mode for consistency across graph/chat avatars */
+  /* --color-user: #4f46e5; */
+  /* --color-ai: #059669; */
+  /* --color-synthesis: #d97706; */
 
-  --color-ai: #059669;
-  /* Emerald 600 */
-  --color-ai-hover: #047857;
-  /* Emerald 700 */
+  /* Keep distinct hover states or adjust if needed, but for now fallback to defaults or keep these? 
+     Let's comment them out to strictly match the base behavior or keep them if they are interaction states. 
+     The root has user-hover #4f46e5. Light mode had #4338ca. 
+     Let's comment out to fully unify. */
+  /* --color-user-hover: #4338ca; */
+  /* --color-ai-hover: #047857; */
 
-  --color-synthesis: #d97706;
-  /* Amber 600 */
   --color-synthesis-glow: rgba(217, 119, 6, 0.2);
 
   --color-system: #475569;

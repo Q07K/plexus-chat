@@ -307,10 +307,19 @@ onMounted(() => {
             @click="store.setActiveNode(node.id)"
          >
              <div class="context-card-header">
-                 <div class="context-icon">
-                    <span v-if="node.type === 'user'">U</span>
-                    <span v-else-if="node.type === 'ai'">AI</span>
-                    <span v-else>S</span>
+                 <div class="context-icon-wrapper">
+                      <svg v-if="node.type === 'user'" viewBox="0 0 24 24" class="context-svg">
+                          <circle cx="12" cy="12" r="11" fill="var(--color-user)" />
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#fff" transform="translate(0, 0) scale(0.5) translate(12, 12)" />
+                      </svg>
+                      <svg v-else-if="node.type === 'ai'" viewBox="0 0 24 24" class="context-svg">
+                          <path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z" fill="var(--color-ai)" />
+                          <path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="#fff" transform="translate(6, 6) scale(0.5)" />
+                      </svg>
+                      <svg v-else viewBox="0 0 24 24" class="context-svg">
+                          <rect x="5" y="5" width="14" height="14" rx="2" transform="rotate(45 12 12)" fill="var(--color-synthesis)" />
+                           <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" fill="#fff" transform="translate(6.6, 6.6) scale(0.45)" />
+                      </svg>
                  </div>
                  <span class="context-type">{{ node.type === 'user' ? 'User Question' : 'AI Response' }}</span>
              </div>
@@ -343,7 +352,20 @@ onMounted(() => {
                         :class="source.type"
                         @click="store.setActiveNode(source.id)"
                      >
-                        <span class="mini-source-icon" :class="source.type"></span>
+                        <div class="mini-source-icon-wrapper">
+                             <svg v-if="source.type === 'user'" viewBox="0 0 24 24" class="mini-svg">
+                                <circle cx="12" cy="12" r="11" fill="var(--color-user)" />
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#fff" transform="translate(0, 0) scale(0.5) translate(12, 12)" />
+                             </svg>
+                             <svg v-else-if="source.type === 'ai'" viewBox="0 0 24 24" class="mini-svg">
+                                <path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z" fill="var(--color-ai)" />
+                                <path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="#fff" transform="translate(6, 6) scale(0.5)" />
+                             </svg>
+                             <svg v-else viewBox="0 0 24 24" class="mini-svg">
+                                <rect x="5" y="5" width="14" height="14" rx="2" transform="rotate(45 12 12)" fill="var(--color-synthesis)" />
+                                <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" fill="#fff" transform="translate(6.6, 6.6) scale(0.45)" />
+                             </svg>
+                        </div>
                         <span class="mini-source-preview">{{ source.summary || source.label }}</span>
                      </div>
                  </div>
@@ -355,10 +377,19 @@ onMounted(() => {
                 @click="store.setActiveNode(msg.id)"
                 @contextmenu.prevent="openContextMenu($event, msg)"
             >
-                <div class="avatar">
-                <span v-if="msg.type === 'user'">U</span>
-                <span v-else-if="msg.type === 'ai'">AI</span>
-                <span v-else>S</span>
+                <div class="avatar-wrapper">
+                    <svg v-if="msg.type === 'user'" viewBox="0 0 24 24" class="avatar-svg">
+                        <circle cx="12" cy="12" r="11" fill="var(--color-user)" />
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#fff" transform="translate(0, 0) scale(0.5) translate(12, 12)" />
+                    </svg>
+                    <svg v-else-if="msg.type === 'ai'" viewBox="0 0 24 24" class="avatar-svg">
+                        <path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z" fill="var(--color-ai)" />
+                        <path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="#fff" transform="translate(6, 6) scale(0.5)" />
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" class="avatar-svg">
+                        <rect x="5" y="5" width="14" height="14" rx="2" transform="rotate(45 12 12)" fill="var(--color-synthesis)" />
+                         <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" fill="#fff" transform="translate(6.6, 6.6) scale(0.45)" />
+                    </svg>
                 </div>
                 <div class="bubble">
                 <MarkdownRenderer :content="msg.label" />
@@ -557,31 +588,20 @@ onMounted(() => {
   align-items: flex-start;
 }
 
-.avatar {
+.avatar-wrapper {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  font-weight: bold;
   flex-shrink: 0;
+  /* Remove background/border as SVG handles it */
 }
 
-.message-item.user .avatar {
-  background: var(--color-user);
-  color: white;
-}
-
-.message-item.ai .avatar {
-  background: var(--color-ai);
-  color: white;
-}
-
-.message-item.synthesis .avatar {
-  background: var(--color-synthesis);
-  color: white;
+.avatar-svg {
+    width: 32px;
+    height: 32px;
+    display: block;
 }
 
 .bubble {
@@ -716,21 +736,37 @@ onMounted(() => {
   padding-bottom: 0.5rem;
 }
 
-.context-icon {
+/* Old .context-icon styles removed, replaced by SVGs */
+
+.context-icon-wrapper {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
-  font-weight: bold;
-  color: white;
+  flex-shrink: 0;
 }
 
-.context-card.user .context-icon { background: var(--color-user); }
-.context-card.ai .context-icon { background: var(--color-ai); }
-.context-card.synthesis .context-icon { background: var(--color-synthesis); }
+.context-svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.mini-source-icon-wrapper {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mini-svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
 
 .context-type {
   font-size: 0.8rem;

@@ -131,9 +131,13 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
 
 
   const hexPath = (r: number) => {
-    // Flat-topped hexagon
-    const a = (2 * Math.PI) / 6;
-    return "M" + [0, 1, 2, 3, 4, 5].map(i => [r * Math.cos(a * i), r * Math.sin(a * i)]).join("L") + "Z";
+    // Pointy-topped hexagon (Vertical orientation)
+    const n = 6;
+    const a = (2 * Math.PI) / n;
+    const offset = Math.PI / 6; // 30 degrees offset
+    return "M" + Array.from({length: n}).map((_, i) => {
+        return [r * Math.cos(a * i - offset), r * Math.sin(a * i - offset)]
+    }).join("L") + "Z";
   };
 
   const render = () => {
@@ -212,7 +216,7 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
                .attr('class', 'node-shape');
 
           aiGroup.append('path')
-               .attr('d', "M12 2a2 2 0 0 1 2 2v4h-4V4a2 2 0 0 1 2-2zm-7 7h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2.5 3a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z") // Robot Icon
+               .attr('d', "M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z") // Sparkles Icon
                .attr('transform', 'translate(-12, -12) scale(1)') // Center
                .attr('fill', '#ffffff')
                .attr('opacity', 0.9);
