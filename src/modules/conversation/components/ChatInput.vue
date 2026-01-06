@@ -46,9 +46,22 @@ const handleSubmit = async () => {
   try {
     if (store.isSynthesisMode) {
         // SYNTHESIS MODE
-        // 1. Identify Leaves
-        const sourceIds = new Set(store.links.map((l: any) => typeof l.source === 'object' ? l.source.id : l.source))
-        const leafNodes = store.nodes.filter(n => !sourceIds.has(n.id))
+        // 1. Identify Context Nodes (Selected or Leaves)
+        let contextNodes: GraphNode[] = []
+        
+        if (store.selectedNodeIds.length > 0) {
+            contextNodes = store.nodes.filter(n => store.selectedNodeIds.includes(n.id))
+        } else {
+            // Fallback: Identify Leaves
+            const sourceIds = new Set(store.links.map((l: any) => typeof l.source === 'object' ? l.source.id : l.source))
+            contextNodes = store.nodes.filter(n => !sourceIds.has(n.id))
+        }
+
+        if (contextNodes.length === 0) {
+            // Ideally show a toast/alert, but for now just fallback to alerting
+            // In theory standard chat has at least one node unless empty start
+             return 
+        }
         
         // 2. Create Synthesis Question Node
         const synthNodeId = generateId()
@@ -59,9 +72,9 @@ const handleSubmit = async () => {
         }
         store.addNode(synthNode)
 
-        // 3. Connect Leaves
-        leafNodes.forEach(leaf => {
-          store.addLink({ source: leaf.id, target: synthNodeId })
+        // 3. Connect Context Nodes
+        contextNodes.forEach(node => {
+          store.addLink({ source: node.id, target: synthNodeId })
         })
 
         // 4. Create Answer Node (Thinking)
@@ -77,8 +90,8 @@ const handleSubmit = async () => {
         store.toggleSynthesisMode(false) 
 
         // 5. Call LLM
-        // Context: All leaf node contents + User Query
-        const contextText = leafNodes.map(n => `- ${n.label}`).join('\n')
+        // Context: All context node contents + User Query
+        const contextText = contextNodes.map(n => `- ${n.label}`).join('\n')
         const prompt = `Here are several conversation threads contexts:\n${contextText}\n\nBased on these, please answer the following synthesis question:\n${inputValue}`
         
         const response = await llmStore.generateResponse(

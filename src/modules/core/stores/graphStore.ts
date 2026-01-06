@@ -21,6 +21,9 @@ export const useGraphStore = defineStore('graph', () => {
     const activeNodeId = ref<string | null>(null)
     const isSynthesisMode = ref(false)
 
+    const selectedNodeIds = ref<string[]>([])
+    const lastSelectedNodeId = ref<string | null>(null)
+
     const nodes = ref<GraphNode[]>([
         { id: 'root', type: 'system', label: 'System' },
     ])
@@ -31,21 +34,96 @@ export const useGraphStore = defineStore('graph', () => {
     activeNodeId.value = 'root'
 
     const setActiveNode = (id: string | null) => {
-        if (isSynthesisMode.value) return // Disable single select in synthesis mode? Or maybe clicking toggles selection? 
-        // Spec says: "Leaf nodes become active". 
-        // Let's implement toggle logic later if needed.
+        // Legacy support if called directly
         activeNodeId.value = id
+        if (id) {
+            selectedNodeIds.value = [id]
+            lastSelectedNodeId.value = id
+        } else {
+            selectedNodeIds.value = []
+            lastSelectedNodeId.value = null
+        }
+    }
+
+    const toggleNodeSelection = (id: string) => {
+        const idx = selectedNodeIds.value.indexOf(id)
+        if (idx > -1) {
+            // Remove
+            selectedNodeIds.value = selectedNodeIds.value.filter(existing => existing !== id)
+            if (activeNodeId.value === id) activeNodeId.value = null
+        } else {
+            // Add
+            selectedNodeIds.value = [...selectedNodeIds.value, id]
+            activeNodeId.value = id
+            lastSelectedNodeId.value = id
+        }
+    }
+
+    const handleNodeClick = (id: string, ctrlKey: boolean, shiftKey: boolean) => {
+        if (shiftKey && lastSelectedNodeId.value) {
+            // Range Selection
+            const startIdx = nodes.value.findIndex(n => n.id === lastSelectedNodeId.value)
+            const endIdx = nodes.value.findIndex(n => n.id === id)
+
+            if (startIdx !== -1 && endIdx !== -1) {
+                const min = Math.min(startIdx, endIdx)
+                const max = Math.max(startIdx, endIdx)
+
+                const newSelection = new Set(selectedNodeIds.value)
+                for (let i = min; i <= max; i++) {
+                    const node = nodes.value[i]
+                    if (node) newSelection.add(node.id)
+                }
+                selectedNodeIds.value = Array.from(newSelection)
+            }
+            activeNodeId.value = id
+        } else if (ctrlKey) {
+            // Discontinuous Selection
+            toggleNodeSelection(id)
+        } else {
+            // Single Selection
+            selectedNodeIds.value = [id]
+            activeNodeId.value = id
+            lastSelectedNodeId.value = id
+        }
+
+        // Auto-toggle Synthesis Mode based on selection count
+        if (selectedNodeIds.value.length > 1) {
+            isSynthesisMode.value = true
+        } else {
+            isSynthesisMode.value = false
+        }
     }
 
     const toggleSynthesisMode = (val?: boolean) => {
-        isSynthesisMode.value = val ?? !isSynthesisMode.value
+        const newVal = val ?? !isSynthesisMode.value
+        isSynthesisMode.value = newVal
+
+        if (newVal) {
+            // If turning ON and selection is not "multi" (or empty/single), select all leaves
+            if (selectedNodeIds.value.length <= 1) {
+                const sourceIds = new Set(links.value.map((l: any) => typeof l.source === 'object' ? l.source.id : l.source))
+                const leafNodes = nodes.value.filter(n => !sourceIds.has(n.id))
+                selectedNodeIds.value = leafNodes.map(n => n.id)
+            }
+        } else {
+            // Turning OFF: Reset selection to single active node (or none)
+            if (activeNodeId.value) {
+                selectedNodeIds.value = [activeNodeId.value]
+                lastSelectedNodeId.value = activeNodeId.value
+            } else {
+                selectedNodeIds.value = []
+                lastSelectedNodeId.value = null
+            }
+        }
     }
 
     const addNode = (node: GraphNode) => {
         nodes.value.push(node)
-        // Auto-select new user nodes? Or stay on the branching point?
-        // Usually in chat, you want to follow the conversation, so let's select the NEW node.
         activeNodeId.value = node.id
+        // Auto-select new node
+        selectedNodeIds.value = [node.id]
+        lastSelectedNodeId.value = node.id
     }
 
     const addLink = (link: GraphLink) => {
@@ -81,9 +159,11 @@ export const useGraphStore = defineStore('graph', () => {
         nodes,
         links,
         activeNodeId,
+        selectedNodeIds,
         isSynthesisMode,
         toggleSynthesisMode,
         setActiveNode,
+        handleNodeClick,
         addNode,
         addLink,
         getThread

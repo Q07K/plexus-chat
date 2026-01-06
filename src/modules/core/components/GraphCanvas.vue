@@ -138,7 +138,11 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
   }
 
   const link = linkGroup.selectAll('path')
-      .data(store.links)
+      .data(store.links, (d: any) => {
+          const s = typeof d.source === 'object' ? d.source.id : d.source
+          const t = typeof d.target === 'object' ? d.target.id : d.target
+          return `${s}-${t}`
+      })
       .join('path')
       .attr('fill', 'none')
       .attr('stroke', 'var(--color-link-inactive)')
@@ -246,7 +250,7 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
       )
       .call(drag(simulation))
       .on('click', (event, d: any) => {
-        store.setActiveNode(d.id)
+        store.handleNodeClick(d.id, event.ctrlKey || event.metaKey, event.shiftKey)
         event.stopPropagation() // Prevent zoom click
       })
       .on('mouseenter', (event, d: any) => {
@@ -342,44 +346,58 @@ onMounted(() => {
   watchEffect(() => {
      // Access store dependencies
      const activeId = store.activeNodeId
+     const selectedIds = store.selectedNodeIds || []
      const isSynth = store.isSynthesisMode
      
      if(!g) return
 
      const highlightIds = new Set<string>()
      
-     if (isSynth) {
-       // Highlight Leaves
-       const sourceIds = new Set(store.links.map((l: any) => typeof l.source === 'object' ? l.source.id : l.source))
-       store.nodes.forEach(n => {
-         if (!sourceIds.has(n.id)) highlightIds.add(n.id)
-       })
-     } else if (activeId) {
-        // Ancestor Traversal
-        const queue = [activeId]
-        highlightIds.add(activeId)
-        const visited = new Set<string>([activeId])
-        
-        while(queue.length > 0) {
-           const curr = queue.shift()!
-           // Incoming links
-           store.links.forEach((l: any) => {
-              const tId = typeof l.target === 'object' ? l.target.id : l.target
-              if (tId === curr) {
-                 const sId = typeof l.source === 'object' ? l.source.id : l.source
-                 if (!visited.has(sId)) {
-                    visited.add(sId)
-                    highlightIds.add(sId)
-                    queue.push(sId)
-                 }
-              }
-           })
-        }
-     } else {
-        // No selection -> Highlight All
-        store.nodes.forEach(n => highlightIds.add(n.id))
+     // 1. Add explicitly selected nodes
+     selectedIds.forEach(id => highlightIds.add(id))
+
+     // 2. Identify Seeds (Active + Selected)
+     const seeds = new Set<string>()
+     selectedIds.forEach(id => seeds.add(id))
+     if (activeId) seeds.add(activeId)
+
+     // 3. Fallback for Synthesis Mode (if no selection)
+     if (isSynth && seeds.size === 0) {
+         const sourceIds = new Set(store.links.map((l: any) => typeof l.source === 'object' ? l.source.id : l.source))
+         store.nodes.forEach(n => {
+             if (!sourceIds.has(n.id)) seeds.add(n.id)
+         })
      }
 
+     // 4. Populate highlightIds (Seeds + Ancestors)
+     if (seeds.size > 0) {
+         const queue = Array.from(seeds)
+         queue.forEach(id => highlightIds.add(id))
+         const visited = new Set<string>(seeds)
+
+         while(queue.length > 0) {
+            const curr = queue.shift()!
+            // Incoming links (Parent <- Child)
+            store.links.forEach((l: any) => {
+               const tId = typeof l.target === 'object' ? l.target.id : l.target
+               if (tId === curr) {
+                  const sId = typeof l.source === 'object' ? l.source.id : l.source
+                  if (!visited.has(sId)) {
+                     visited.add(sId)
+                     highlightIds.add(sId)
+                     queue.push(sId)
+                  }
+               }
+            })
+         }
+     } else {
+         // No selection, no active, no synth default -> Show All
+         store.nodes.forEach(n => highlightIds.add(n.id))
+     }
+
+     // 4. Default: If no highlightIds found (no selection, no active), show all?
+     //    Actually initGraph ensures activeId='root'.
+     
      // Apply Styles
      g.selectAll('.node-shape')
        .transition().duration(200)
@@ -387,23 +405,23 @@ onMounted(() => {
           const d = d3.select(this.parentNode).datum() as any
           const id = d.id
           
-          if (isSynth) {
-             return highlightIds.has(id) ? 'var(--color-node-highlight-synth)' : 'var(--color-node-inactive)'
-          }
-          if (id === activeId) return 'var(--color-node-active)' // Active Note
-          if (highlightIds.has(id)) return 'var(--color-node-ancestor)' // Ancestor
-          return 'var(--color-node-inactive)' // Inactive
+          if (selectedIds.includes(id)) return 'var(--color-node-active)' // Selected gets active color
+          if (highlightIds.has(id)) return 'var(--color-node-ancestor)' // Ancestor/Context
+          return 'var(--color-node-inactive)'
        })
        .attr('stroke-width', function(this: any) {
           const d = d3.select(this.parentNode).datum() as any
           const id = d.id
-          if (isSynth) return highlightIds.has(id) ? 3 : 1
-          if (id === activeId) return 3
+          if (selectedIds.includes(id)) return 3
           return highlightIds.has(id) ? 2 : 1
        })
        .attr('opacity', function(this: any) {
           const d = d3.select(this.parentNode).datum() as any
-          return highlightIds.has(d.id) ? 1 : 0.2
+          const id = d.id
+          if (highlightIds.size > 0) {
+              return highlightIds.has(id) ? 1 : 0.2
+          }
+          return 1
        })
 
      g.selectAll('.links path')
@@ -411,9 +429,6 @@ onMounted(() => {
        .attr('stroke', (d: any) => {
            const sId = typeof d.source === 'object' ? d.source.id : d.source
            const tId = typeof d.target === 'object' ? d.target.id : d.target
-           // Logic: Link is active if both nodes are highlighted AND it's on the path?
-           // If we just check highlightIds, any link between two ancestors is active.
-           // This is correct contextually.
            if (highlightIds.has(sId) && highlightIds.has(tId)) return 'var(--color-link-active)'
            return 'var(--color-link-inactive)'
        })
