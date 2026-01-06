@@ -177,6 +177,7 @@ const synthesisContextNodes = computed(() => {
 })
 
 // Computed: Traverse keys back from activeNode to root to build "Current Thread"
+// Computed: Traverse keys back from activeNode to root to build "Current Thread"
 const messages = computed(() => {
   if (store.isSynthesisMode) return [] // Don't show standard messages in synthesis mode
   if (!store.activeNodeId) return []
@@ -194,6 +195,13 @@ const messages = computed(() => {
     if (!node) break
     thread.unshift(node) // Add to front
     
+    // If this node is a 'synthesis' node, it marks the start of a segment.
+    // If it's the active node, we keep it and continue to find its history (until the previous synthesis).
+    // If it's an ancestor synthesis node, we stop here.
+    if (node.type === 'synthesis' && node.id !== store.activeNodeId) {
+        break
+    }
+
     // Find parent
     const link = store.links.find(l => {
        const tId = typeof l.target === 'object' ? (l.target as any).id : l.target
@@ -207,10 +215,18 @@ const messages = computed(() => {
     }
   }
   // Filter out Root if it is of type 'synthesis' with label "System" (or just checked by ID if fixed)
-  // Actually, specs say "Change root node type to system... and remove from chat"
-  // So we filter it here.
   return thread.filter(t => t.id !== 'root')
 })
+
+const getSynthesisSources = (nodeId: string) => {
+   return store.links
+     .filter(l => (typeof l.target === 'object' ? l.target.id : l.target) === nodeId)
+     .map(l => {
+        const sId = typeof l.source === 'object' ? l.source.id : l.source
+        return store.nodes.find(n => n.id === sId)
+     })
+     .filter(n => n) as GraphNode[]
+}
 
 // Scroll handling
 const lastActiveNodeId = ref(store.activeNodeId)
@@ -314,19 +330,39 @@ onMounted(() => {
         <div 
             v-for="msg in messages" 
             :key="msg.id"
-            class="message-item"
-            :class="msg.type"
-            @click="store.setActiveNode(msg.id)"
-            @contextmenu.prevent="openContextMenu($event, msg)"
+            class="message-wrapper"
         >
-
-            <div class="avatar">
-            <span v-if="msg.type === 'user'">U</span>
-            <span v-else-if="msg.type === 'ai'">AI</span>
-            <span v-else>S</span>
+            <!-- Embed Context Sources for Synthesis Nodes -->
+            <div v-if="msg.type === 'synthesis'" class="synthesis-embedded-sources">
+                 <div class="source-group-label">{{ $t('synthesis.context') }}:</div>
+                 <div class="sources-grid">
+                     <div 
+                        v-for="source in getSynthesisSources(msg.id)"
+                        :key="source.id"
+                        class="mini-source-card"
+                        :class="source.type"
+                        @click="store.setActiveNode(source.id)"
+                     >
+                        <span class="mini-source-icon" :class="source.type"></span>
+                        <span class="mini-source-preview">{{ source.summary || source.label }}</span>
+                     </div>
+                 </div>
             </div>
-            <div class="bubble">
-            <MarkdownRenderer :content="msg.label" />
+
+            <div 
+                class="message-item"
+                :class="msg.type"
+                @click="store.setActiveNode(msg.id)"
+                @contextmenu.prevent="openContextMenu($event, msg)"
+            >
+                <div class="avatar">
+                <span v-if="msg.type === 'user'">U</span>
+                <span v-else-if="msg.type === 'ai'">AI</span>
+                <span v-else>S</span>
+                </div>
+                <div class="bubble">
+                <MarkdownRenderer :content="msg.label" />
+                </div>
             </div>
         </div>
         
@@ -723,11 +759,73 @@ onMounted(() => {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  line-clamp: 3;
 }
 
 .synthesis-badge {
     color: var(--color-synthesis);
     background: rgba(245, 158, 11, 0.1);
     border-color: rgba(245, 158, 11, 0.3);
+}
+
+.synthesis-embedded-sources {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.5rem 0.5rem 2.5rem; /* Indent to align with bubble flow roughly */
+}
+
+.source-group-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.sources-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mini-source-card {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    max-width: 200px;
+}
+
+.mini-source-card:hover {
+    background: var(--color-bg-hover-glass);
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.mini-source-card.user { border-left: 3px solid var(--color-user); }
+.mini-source-card.ai { border-left: 3px solid var(--color-ai); }
+.mini-source-card.synthesis { border-left: 3px solid var(--color-synthesis); }
+
+.mini-source-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.mini-source-icon.user { background: var(--color-user); }
+.mini-source-icon.ai { background: var(--color-ai); }
+.mini-source-icon.synthesis { background: var(--color-synthesis); }
+
+.mini-source-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-text-secondary);
 }
 </style>

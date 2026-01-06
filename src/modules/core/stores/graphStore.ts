@@ -142,6 +142,16 @@ export const useGraphStore = defineStore('graph', () => {
             if (!node) break
             thread.unshift(node)
 
+            // Break if we hit a synthesis node (that isn't the start node itself)
+            // This treats synthesis nodes as roots of new conversation segments
+            if (node.type === 'synthesis' && node.id !== nodeId) {
+                // Actually, if we hit a synthesis node further up, we should encompass it?
+                // No, per requirement: "History restarts after synthesis".
+                // So if we traverse UP and find a synthesis node, that synthesis node should be the start (root) of this thread segment.
+                // So we keep it in the thread (it's already unshifted) and then break.
+                break
+            }
+
             const link = links.value.find(l => {
                 const tId = typeof l.target === 'object' ? (l.target as any).id : l.target
                 return tId === currId

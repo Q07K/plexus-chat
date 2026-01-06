@@ -90,8 +90,16 @@ const handleSubmit = async () => {
         store.toggleSynthesisMode(false) 
 
         // 5. Call LLM
-        // Context: All context node contents + User Query
-        const contextText = contextNodes.map(n => `- ${n.label}`).join('\n')
+        // Context: For each context node, we need its thread segment history.
+        const contextText = contextNodes.map((n, index) => {
+             const thread = store.getThread(n.id)
+             const threadTranscript = thread.map(t => {
+                 const role = t.type === 'user' ? 'User' : (t.type === 'ai' ? 'AI' : 'Assistant')
+                 return `${role}: ${t.label}`
+             }).join('\n')
+             return `[Context ${index + 1} source]:\n${threadTranscript}`
+        }).join('\n\n---\n\n')
+        
         const prompt = `Here are several conversation threads contexts:\n${contextText}\n\nBased on these, please answer the following synthesis question:\n${inputValue}`
         
         const response = await llmStore.generateResponse(
