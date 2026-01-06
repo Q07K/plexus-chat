@@ -162,8 +162,23 @@ onUnmounted(() => {
   document.removeEventListener('click', closeContextMenu)
 })
 
+// Computed: Selected Context Nodes for Synthesis
+const synthesisContextNodes = computed(() => {
+    if (!store.isSynthesisMode) return []
+    // If specific selection exists, use that. Else fall back to leaves (as per ChatInput logic)
+    // Actually ChatInput logic is inside ChatInput. Let's replicate logic or trust store state.
+    // Store has selectedNodeIds.
+    if (store.selectedNodeIds.length > 0) {
+        return store.nodes.filter(n => store.selectedNodeIds.includes(n.id))
+    }
+    // Fallback: Leaves
+    const sourceIds = new Set(store.links.map((l: any) => typeof l.source === 'object' ? l.source.id : l.source))
+    return store.nodes.filter(n => !sourceIds.has(n.id))
+})
+
 // Computed: Traverse keys back from activeNode to root to build "Current Thread"
 const messages = computed(() => {
+  if (store.isSynthesisMode) return [] // Don't show standard messages in synthesis mode
   if (!store.activeNodeId) return []
 
   // Traverse upwards
@@ -216,7 +231,7 @@ const handleScroll = () => {
   isUserAtBottom.value = Math.abs(scrollHeight - clientHeight - scrollTop) <= 5
 }
 
-watch(messages, async () => {
+watch([messages, () => store.isSynthesisMode], async () => {
   const currentId = store.activeNodeId
   // Detect if we switched threads (active node changed completely)
   const isNewThread = currentId !== lastActiveNodeId.value
@@ -241,9 +256,10 @@ onMounted(() => {
     <div class="resize-handle" @mousedown.prevent="startResize" :class="{ active: isDragging }"></div>
     <div class="header">
       <div class="header-content">
-        <h2>{{ $t('chat.thread') }}</h2>
+        <h2>{{ store.isSynthesisMode ? $t('synthesis.context') : $t('chat.thread') }}</h2>
         <div class="meta-info">
-             <span class="badge">{{ messages.length }} {{ $t('chat.msgs') }}</span>
+             <span class="badge" v-if="!store.isSynthesisMode">{{ messages.length }} {{ $t('chat.msgs') }}</span>
+             <span class="badge synthesis-badge" v-else>{{ synthesisContextNodes.length }} Source(s)</span>
              <span class="model-badge" :class="llmStore.selectedModel?.provider">
                {{ llmStore.selectedModel?.name }}
              </span>
@@ -261,28 +277,64 @@ onMounted(() => {
     </div>
     
     <div class="messages-list" ref="chatContainer" @scroll="handleScroll">
-      <div 
-        v-for="msg in messages" 
-        :key="msg.id"
-        class="message-item"
-        :class="msg.type"
-        @click="store.setActiveNode(msg.id)"
-        @contextmenu.prevent="openContextMenu($event, msg)"
-      >
-
-        <div class="avatar">
-          <span v-if="msg.type === 'user'">U</span>
-          <span v-else-if="msg.type === 'ai'">AI</span>
-          <span v-else>S</span>
-        </div>
-        <div class="bubble">
-          <MarkdownRenderer :content="msg.label" />
-        </div>
-      </div>
       
-      <div v-if="!store.activeNodeId" class="empty-state">
-        {{ $t('chat.selectNode') }}
+      <!-- Synthesis Context View -->
+      <div v-if="store.isSynthesisMode" class="synthesis-context-list">
+         <div class="synthesis-intro">
+             <p>{{ $t('synthesis.intro') }}</p>
+         </div>
+         <div 
+            v-for="node in synthesisContextNodes"
+            :key="node.id"
+            class="context-card"
+            :class="node.type"
+            @click="store.setActiveNode(node.id)"
+         >
+             <div class="context-card-header">
+                 <div class="context-icon">
+                    <span v-if="node.type === 'user'">U</span>
+                    <span v-else-if="node.type === 'ai'">AI</span>
+                    <span v-else>S</span>
+                 </div>
+                 <span class="context-type">{{ node.type === 'user' ? 'User Question' : 'AI Response' }}</span>
+             </div>
+             <div class="context-content">
+                  <div v-if="node.summary" class="context-summary">
+                      <strong>Summary:</strong> {{ node.summary }}
+                  </div>
+                  <div class="context-preview">
+                      <MarkdownRenderer :content="node.label" />
+                  </div>
+             </div>
+         </div>
       </div>
+
+      <!-- Standard Chat View -->
+      <template v-else>
+        <div 
+            v-for="msg in messages" 
+            :key="msg.id"
+            class="message-item"
+            :class="msg.type"
+            @click="store.setActiveNode(msg.id)"
+            @contextmenu.prevent="openContextMenu($event, msg)"
+        >
+
+            <div class="avatar">
+            <span v-if="msg.type === 'user'">U</span>
+            <span v-else-if="msg.type === 'ai'">AI</span>
+            <span v-else>S</span>
+            </div>
+            <div class="bubble">
+            <MarkdownRenderer :content="msg.label" />
+            </div>
+        </div>
+        
+        <div v-if="!store.activeNodeId" class="empty-state">
+            {{ $t('chat.selectNode') }}
+        </div>
+      </template>
+
     </div>
     
     <div class="input-area">
@@ -571,5 +623,111 @@ onMounted(() => {
 
 .menu-item:hover {
   background: var(--color-bg-hover-glass);
+}
+.synthesis-context-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.synthesis-intro {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--color-synthesis);
+}
+
+.context-card {
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.context-card:hover {
+  background: var(--color-bg-hover-glass);
+  border-color: var(--color-synthesis);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.context-card.user {
+  border-left: 4px solid var(--color-user);
+}
+
+.context-card.ai {
+  border-left: 4px solid var(--color-ai);
+}
+
+.context-card.synthesis {
+  border-left: 4px solid var(--color-synthesis);
+}
+
+.context-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border); /* Separator */
+  padding-bottom: 0.5rem;
+}
+
+.context-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: white;
+}
+
+.context-card.user .context-icon { background: var(--color-user); }
+.context-card.ai .context-icon { background: var(--color-ai); }
+.context-card.synthesis .context-icon { background: var(--color-synthesis); }
+
+.context-type {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.context-summary {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+  border: 1px dashed var(--color-border);
+}
+
+.context-preview {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  max-height: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.synthesis-badge {
+    color: var(--color-synthesis);
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
 }
 </style>

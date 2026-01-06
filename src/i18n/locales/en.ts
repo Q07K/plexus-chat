@@ -14,7 +14,9 @@ export default {
         placeholder: 'Ask synthesis question...',
         status: {
             synthesizing: 'Synthesizing insights...'
-        }
+        },
+        context: 'Synthesis Context',
+        intro: 'The following contexts are selected for synthesis:'
     },
     home: {
         title: 'Plexus Chat',

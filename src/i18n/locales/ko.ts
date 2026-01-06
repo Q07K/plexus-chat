@@ -14,7 +14,9 @@ export default {
         placeholder: '종합 질문을 입력하세요...',
         status: {
             synthesizing: '인사이트 종합 중...'
-        }
+        },
+        context: '종합 컨텍스트',
+        intro: '선택된 다음 대화 맥락들이 종합에 사용됩니다:'
     },
     home: {
         title: 'Plexus Chat',
