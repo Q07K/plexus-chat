@@ -21,9 +21,10 @@ export const useLLMStore = defineStore('llm', () => {
 
     const availableModels: ModelOption[] = [
         { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
-        { id: 'gemini-3.0-flash-preview', name: 'Gemini 3.0 Flash Preview', provider: 'google' },
+        { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', provider: 'google' },
         { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'google' },
         { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google' },
+        { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', provider: 'google' },
         { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash Exp', provider: 'google' },
     ]
 
