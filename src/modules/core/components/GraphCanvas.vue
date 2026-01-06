@@ -47,42 +47,36 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
         children.get(s)!.push(t)
       })
       
-      // BFS for depths
-      const queue: {id: string, d: number}[] = []
+      // Topological Depth Calculation (Longest Path)
+      // This ensures a node is always below ALL its parents, crucial for Synthesis nodes merging different depths.
+      store.nodes.forEach(n => depthMap.set(n.id, 0))
       
-      // Find roots (nodes with no incoming links)
-      // Actually, standard conversation tree starts at the first node added.
-      // Let's assume store.nodes[0] is root, or find nodes with no sources.
-      const targetIds = new Set(sLinks.map((l: any) => typeof l.target === 'object' ? l.target.id : l.target))
-      const roots = store.nodes.filter(n => !targetIds.has(n.id))
-      
-      roots.forEach(r => {
-        queue.push({id: r.id, d: 0})
-        depthMap.set(r.id, 0)
-      })
-      
-      // Fallback if no roots found (cycles?), start from first node
-      const firstNode = store.nodes[0]
-      if (roots.length === 0 && firstNode) {
-          queue.push({id: firstNode.id, d: 0})
-          depthMap.set(firstNode.id, 0)
-      }
-
-      while(queue.length > 0) {
-        const {id, d} = queue.shift()!
-        const kids = children.get(id) || []
-        kids.forEach(kid => {
-          if(!depthMap.has(kid)) {
-            depthMap.set(kid, d + 1)
-            queue.push({id: kid, d: d + 1})
-          }
-        })
+      // Relaxation passes (sufficient for DAG)
+      // We iterate enough times to propagate maximum depth
+      const iterations = store.nodes.length
+      for(let i=0; i<iterations; i++) {
+          let changed = false
+          sLinks.forEach((l: any) => {
+              const sId = typeof l.source === 'object' ? l.source.id : l.source
+              const tId = typeof l.target === 'object' ? l.target.id : l.target
+              
+              const sDepth = depthMap.get(sId) || 0
+              const tDepth = depthMap.get(tId) || 0
+              
+              if (sDepth + 1 > tDepth) {
+                  depthMap.set(tId, sDepth + 1)
+                  changed = true
+              }
+          })
+          if (!changed) break
       }
       
       // Force Update
       simulation.force('y', d3.forceY((d: any) => {
-         const depth = depthMap.get(d.id) ?? (d.type === 'synthesis' ? 5 : 0)
-         return depth * 120 + 100
+         let depth = depthMap.get(d.id) ?? 0
+         // Moderate spacing for synthesis to distinguish it as a "tier"
+         const spacing = d.type === 'synthesis' ? 60 : 0
+         return depth * 120 + 100 + spacing
       }).strength(1))
       
       simulation.nodes(store.nodes as d3.SimulationNodeDatum[])
@@ -101,6 +95,9 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
           .attr('width', width)
           .attr('height', height)
           .attr('viewBox', [0, 0, width, height])
+          
+  // Add definitions for markers or filters if needed (e.g. arrowheads)
+  const defs = svg.append('defs')
 
   g = svg.append('g').attr('class', 'graph-content')
 
@@ -113,7 +110,16 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
   svg.call(zoom).on('dblclick.zoom', null)
 
   simulation = d3.forceSimulation()
-      .force('link', d3.forceLink().id((d: any) => d.id).distance(80))
+      .force('link', d3.forceLink()
+        .id((d: any) => d.id)
+        .distance((l: any) => {
+             // Subtle increase for synthesis inputs to allow broader "fan in"
+            const target = l.target as any
+            const isSynth = (typeof target === 'object' && target.type === 'synthesis') 
+                            || (typeof target === 'string' && store.nodes.find(n => n.id === target)?.type === 'synthesis')
+            return isSynth ? 120 : 80
+        })
+      )
       .force('charge', d3.forceManyBody().strength(-300))
       .force('collide', d3.forceCollide(30))
       .force('x', d3.forceX(width / 2).strength(0.1))
@@ -144,10 +150,29 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
           return `${s}-${t}`
       })
       .join('path')
+      .attr('class', 'link-path') // Add class for selection
       .attr('fill', 'none')
-      .attr('stroke', 'var(--color-link-inactive)')
+      .attr('stroke', (d: any) => {
+          // Check target type
+          const targetStub = typeof d.target === 'object' ? d.target : store.nodes.find(n => n.id === d.target)
+          if (targetStub && targetStub.type === 'synthesis') {
+              return 'var(--color-synthesis)'
+          }
+          return 'var(--color-link-inactive)'
+      })
+      .attr('stroke-width', (d: any) => {
+           const targetStub = typeof d.target === 'object' ? d.target : store.nodes.find(n => n.id === d.target)
+           return (targetStub && targetStub.type === 'synthesis') ? 1.5 : 2
+      })
+      .attr('stroke-dasharray', (d: any) => {
+          // Dashed lines for synthesis inputs
+          const targetStub = typeof d.target === 'object' ? d.target : store.nodes.find(n => n.id === d.target)
+          if (targetStub && targetStub.type === 'synthesis') {
+              return '4, 4'
+          }
+          return null
+      })
       .attr('stroke-opacity', 0.6)
-      .attr('stroke-width', 2)
 
   // Render Nodes
   let nodeGroup = g.select<SVGGElement>('.nodes')
@@ -394,9 +419,6 @@ onMounted(() => {
          // No selection, no active, no synth default -> Show All
          store.nodes.forEach(n => highlightIds.add(n.id))
      }
-
-     // 4. Default: If no highlightIds found (no selection, no active), show all?
-     //    Actually initGraph ensures activeId='root'.
      
      // Apply Styles
      g.selectAll('.node-shape')
@@ -429,13 +451,29 @@ onMounted(() => {
        .attr('stroke', (d: any) => {
            const sId = typeof d.source === 'object' ? d.source.id : d.source
            const tId = typeof d.target === 'object' ? d.target.id : d.target
-           if (highlightIds.has(sId) && highlightIds.has(tId)) return 'var(--color-link-active)'
+           
+           // Priority 1: Highlighting Logic
+           if (highlightIds.has(sId) && highlightIds.has(tId)) {
+               // Check if it's a synthesis link for customization
+               const targetStub = typeof d.target === 'object' ? d.target : store.nodes.find(n => n.id === tId)
+               if (targetStub && targetStub.type === 'synthesis') {
+                    return 'var(--color-synthesis)'
+               }
+               return 'var(--color-link-active)'
+           }
+           
+           // Inactive state - check if synthesis to keep slight color tint?
+            const targetStub = typeof d.target === 'object' ? d.target : store.nodes.find(n => n.id === tId)
+               if (targetStub && targetStub.type === 'synthesis') {
+                    return 'var(--color-synthesis)'
+               }
+           
            return 'var(--color-link-inactive)'
        })
        .attr('stroke-opacity', (d: any) => {
            const sId = typeof d.source === 'object' ? d.source.id : d.source
            const tId = typeof d.target === 'object' ? d.target.id : d.target
-           if (highlightIds.has(sId) && highlightIds.has(tId)) return 0.6
+           if (highlightIds.has(sId) && highlightIds.has(tId)) return 0.8 // Increased opacity for readability
            return 0.1
        })
   })
