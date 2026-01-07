@@ -25,6 +25,26 @@ const tooltip = ref({
   content: ''
 })
 
+// Context Menu State
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  nodeId: null as string | null
+})
+
+const closeContextMenu = () => {
+  contextMenu.value.visible = false
+}
+
+const handleDelete = () => {
+  if (contextMenu.value.nodeId) {
+    store.removeNode(contextMenu.value.nodeId)
+  }
+  closeContextMenu()
+}
+
+
 const store = useGraphStore()
 
 // D3 Selections
@@ -277,10 +297,23 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
         update => update,
         exit => exit.remove()
       )
+      .on('contextmenu', (event, d: any) => {
+        event.preventDefault()
+        event.stopPropagation()
+        if (d.type === 'system') return // Protect system root
+        
+        contextMenu.value = {
+          visible: true,
+          x: event.clientX,
+          y: event.clientY,
+          nodeId: d.id
+        }
+      })
       .call(drag(simulation))
       .on('click', (event, d: any) => {
         store.handleNodeClick(d.id, event.ctrlKey || event.metaKey, event.shiftKey)
         event.stopPropagation() // Prevent zoom click
+        closeContextMenu() // Close if open
       })
       .on('mouseenter', (event, d: any) => {
           if (d.summary) {
@@ -362,6 +395,7 @@ useResizeObserver(containerRef, (entries) => {
 
 onMounted(() => {
   initGraph()
+  document.addEventListener('click', closeContextMenu)
   
   // 1. Data Watcher: Update Simulation & Structure
   watchEffect(() => {
@@ -485,6 +519,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (simulation) simulation.stop()
+  document.removeEventListener('click', closeContextMenu)
 })
 
 </script>
@@ -493,7 +528,7 @@ onUnmounted(() => {
   <div ref="containerRef" class="graph-container">
     <svg ref="svgRef" class="graph-svg"></svg>
     
-    <Teleport to="body">
+  <Teleport to="body">
        <div 
          v-if="tooltip.visible" 
          class="graph-tooltip"
@@ -501,6 +536,18 @@ onUnmounted(() => {
        >
          <MarkdownRenderer :content="tooltip.content" />
        </div>
+
+       <div 
+        v-if="contextMenu.visible" 
+        class="context-menu" 
+        :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
+        @click.stop
+        @contextmenu.prevent
+      >
+        <div class="menu-item delete" @click="handleDelete">
+          {{ $t('chat.contextMenu.delete') }}
+        </div>
+      </div>
     </Teleport>
   </div>
 </template>
@@ -539,5 +586,33 @@ onUnmounted(() => {
   backdrop-filter: blur(10px);
   font-size: 0.85rem;
   color: var(--color-text-primary);
+}
+
+.context-menu {
+  position: fixed;
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  min-width: 150px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.menu-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  transition: background 0.2s;
+}
+
+.menu-item:hover {
+  background: var(--color-bg-hover-glass);
+}
+
+.menu-item.delete {
+    color: var(--color-error, #ff4d4f);
 }
 </style>

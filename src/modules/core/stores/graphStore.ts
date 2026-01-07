@@ -174,6 +174,29 @@ export const useGraphStore = defineStore('graph', () => {
         isSynthesisMode.value = false
     }
 
+    const removeNode = (nodeId: string) => {
+        if (nodeId === 'root') return // Protect system root
+
+        // 1. Remove Node
+        nodes.value = nodes.value.filter(n => n.id !== nodeId)
+
+        // 2. Remove associated Links
+        links.value = links.value.filter(l => {
+            const sId = typeof l.source === 'object' ? (l.source as any).id : l.source
+            const tId = typeof l.target === 'object' ? (l.target as any).id : l.target
+            return sId !== nodeId && tId !== nodeId
+        })
+
+        // 3. Update selection/active states
+        if (activeNodeId.value === nodeId) {
+            activeNodeId.value = null
+        }
+        selectedNodeIds.value = selectedNodeIds.value.filter(id => id !== nodeId)
+        if (lastSelectedNodeId.value === nodeId) {
+            lastSelectedNodeId.value = null
+        }
+    }
+
     return {
         nodes,
         links,
@@ -186,6 +209,7 @@ export const useGraphStore = defineStore('graph', () => {
         addNode,
         addLink,
         getThread,
-        loadGraph
+        loadGraph,
+        removeNode
     }
 })

@@ -38,7 +38,8 @@ export default {
         synthesizing: 'Synthesizing insights...',
         contextMenu: {
             copy: 'Copy',
-            saveImage: 'Save as PNG'
+            saveImage: 'Save as PNG',
+            delete: 'Delete'
         }
     },
     settings: {

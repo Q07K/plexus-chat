@@ -19,18 +19,20 @@ const contextMenu = ref({
   x: 0,
   y: 0,
   targetElement: null as HTMLElement | null,
-  messageContent: ''
+  messageContent: '',
+  nodeId: null as string | null
 })
 
 const openContextMenu = (e: MouseEvent, msg: GraphNode) => {
-  if (msg.type !== 'ai' && msg.type !== 'synthesis') return
+  if (msg.type === 'system') return // Prevent context menu on system root
   store.setActiveNode(msg.id)
   contextMenu.value = {
     visible: true,
     x: e.clientX,
     y: e.clientY,
     targetElement: e.currentTarget as HTMLElement,
-    messageContent: msg.label
+    messageContent: msg.label,
+    nodeId: msg.id
   }
 }
 
@@ -128,6 +130,14 @@ const handleSaveImage = async () => {
   }
   closeContextMenu()
 }
+
+const handleDelete = () => {
+    if (contextMenu.value.nodeId) {
+        store.removeNode(contextMenu.value.nodeId)
+    }
+    closeContextMenu()
+}
+
 
 // Resizing logic
 const panelWidth = ref(400)
@@ -421,8 +431,11 @@ onMounted(() => {
         <div class="menu-item" @click="handleCopy">
           {{ $t('chat.contextMenu.copy') }}
         </div>
-        <div class="menu-item" @click="handleSaveImage">
+        <div class="menu-item" @click="handleSaveImage" v-if="store.nodes.find(n => n.id === contextMenu.nodeId)?.type === 'ai'">
           {{ $t('chat.contextMenu.saveImage') }}
+        </div>
+        <div class="menu-item delete" @click="handleDelete" style="color: var(--color-error, #ff4d4f); border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 8px;">
+          {{ $t('chat.contextMenu.delete') || 'Delete Message' }}
         </div>
       </div>
     </Teleport>
@@ -441,6 +454,7 @@ onMounted(() => {
   z-index: 10;
   backdrop-filter: blur(10px);
 }
+
 
 .resize-handle {
   position: absolute;

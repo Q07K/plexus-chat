@@ -38,7 +38,8 @@ export default {
         synthesizing: '인사이트 종합 중...',
         contextMenu: {
             copy: '복사',
-            saveImage: 'PNG로 저장'
+            saveImage: 'PNG로 저장',
+            delete: '삭제'
         }
     },
     settings: {
