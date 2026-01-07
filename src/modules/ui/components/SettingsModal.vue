@@ -21,7 +21,7 @@ const store = useLLMStore()
 const graphStore = useGraphStore()
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const exportData = () => {
+const exportData = async () => {
   const data = {
     version: 1,
     timestamp: new Date().toISOString(),
@@ -46,11 +46,36 @@ const exportData = () => {
         modelId: store.selectedModelId
     }
   }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+
+  const jsonString = JSON.stringify(data, null, 2)
+  const filename = `plexus_chat_backup_${new Date().toISOString().slice(0,10)}.json`
+
+  try {
+    // @ts-ignore
+    if (window.showSaveFilePicker) {
+      // @ts-ignore
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: 'JSON File',
+          accept: { 'application/json': ['.json'] },
+        }],
+      })
+      const writable = await handle.createWritable()
+      await writable.write(jsonString)
+      await writable.close()
+      return
+    }
+  } catch (err: any) {
+    if (err.name === 'AbortError') return
+    console.error('Native file save failed, falling back to download:', err)
+  }
+
+  const blob = new Blob([jsonString], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `plexus_chat_backup_${new Date().toISOString().slice(0,10)}.json`
+  link.download = filename
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
