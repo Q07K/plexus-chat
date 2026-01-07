@@ -479,7 +479,7 @@ const hexPath = (r: number) => {
   padding: 0.75rem;
   border-radius: 8px;
   color: var(--color-text-primary);
-  font-family: monospace;
+  box-sizing: border-box;
   box-sizing: border-box; 
 }
 
@@ -692,8 +692,7 @@ const hexPath = (r: number) => {
 
 .extension-hint {
     font-size: 0.9rem;
-    color: var(--color-text-secondary);
-    font-family: monospace;
+  color: var(--color-text-secondary);
     white-space: nowrap;
     user-select: none;
 }

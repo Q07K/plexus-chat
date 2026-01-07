@@ -65,7 +65,7 @@ const renderedMarkdown = computed(() => {
   background: rgba(127, 127, 127, 0.2);
   padding: 0.1rem 0.3rem;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: var(--font-family-code);
   font-size: 0.9em;
 }
 
