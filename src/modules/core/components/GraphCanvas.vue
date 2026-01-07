@@ -97,7 +97,7 @@ let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>
           .attr('viewBox', [0, 0, width, height])
           
   // Add definitions for markers or filters if needed (e.g. arrowheads)
-  const defs = svg.append('defs')
+  svg.append('defs')
 
   g = svg.append('g').attr('class', 'graph-content')
 
