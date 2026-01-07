@@ -60,7 +60,9 @@ export default {
             import: 'Import Conversation',
             desc: 'Save your current conversation graph to a file or load a previous one.',
             confirmLoad: 'This will replace your current conversation. Are you sure?',
-            loadSuccess: 'Conversation loaded successfully!'
+            loadSuccess: 'Conversation loaded successfully!',
+            filename: 'Filename',
+            generateTitle: 'Generate Title (AI)'
         },
         llm: {
             systemPrompt: 'System Prompt',

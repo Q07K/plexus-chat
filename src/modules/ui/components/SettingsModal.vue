@@ -20,6 +20,46 @@ const { t, locale } = useI18n()
 const store = useLLMStore()
 const graphStore = useGraphStore()
 const fileInput = ref<HTMLInputElement | null>(null)
+const exportFilename = ref('')
+const isGeneratingTitle = ref(false)
+
+const generateTitle = async () => {
+    if (graphStore.nodes.length === 0) return
+    isGeneratingTitle.value = true
+    
+    // Create a context string from the conversation
+    const context = graphStore.nodes
+        .filter(n => n.type === 'user' || n.type === 'ai')
+        .slice(0, 10) // Limit context
+        .map(n => `${n.type}: ${n.label}`)
+        .join('\n')
+
+    const prompt = `Based on the following conversation snippets, suggest a concise and descriptive filename for a backup file (without extension). 
+    Use underscores or dashes instead of spaces. 
+    Do not include date or "backup" unless relevant to the specific topic.
+    Limit to 3-5 words.
+    
+    Conversation:
+    ${context}
+    
+    Filename:`
+
+    try {
+        const result = await store.generateResponse([{ role: 'user', content: prompt }])
+        // Clean up result
+        let cleaned = result.trim().replace(/["']/g, '').replace(/\.json$/i, '')
+        // Remove markdown code blocks if any
+        cleaned = cleaned.replace(/```json/g, '').replace(/```/g, '').trim()
+        
+        if (cleaned) {
+            exportFilename.value = cleaned
+        }
+    } catch (e) {
+        console.error('Failed to generate title', e)
+    } finally {
+        isGeneratingTitle.value = false
+    }
+}
 
 const exportData = async () => {
   const data = {
@@ -48,7 +88,18 @@ const exportData = async () => {
   }
 
   const jsonString = JSON.stringify(data, null, 2)
-  const filename = `plexus_chat_backup_${new Date().toISOString().slice(0,10)}.json`
+  
+  let baseName = exportFilename.value.trim()
+  if (!baseName) {
+      baseName = `plexus_chat_backup_${new Date().toISOString().slice(0,10)}`
+  }
+  
+  // Ensure no extension in baseName before appending
+  if (baseName.toLowerCase().endsWith('.json')) {
+      baseName = baseName.slice(0, -5)
+  }
+
+  const filename = `${baseName}.json`
 
   try {
     // @ts-ignore
@@ -137,6 +188,16 @@ const importData = (event: Event) => {
 const handleOverlayClick = () => {
   emit('close')
 }
+
+// Hexagon Path Generator for UI Icon
+const hexPath = (r: number) => {
+    const n = 6;
+    const a = (2 * Math.PI) / n;
+    const offset = Math.PI / 6; // 30 degrees
+    return "M" + Array.from({length: n}).map((_, i) => {
+        return [r * Math.cos(a * i - offset), r * Math.sin(a * i - offset)]
+    }).join("L") + "Z";
+};
 </script>
 
 <template>
@@ -277,6 +338,38 @@ const handleOverlayClick = () => {
             <div class="section">
                 <h4>{{ t('settings.data.title') }}</h4>
                 <p class="description">{{ t('settings.data.desc') }}</p>
+
+                <div class="input-group">
+                    <label>{{ t('settings.data.filename') }}</label>
+                    <div class="filename-input-wrapper">
+                        <div class="input-with-action">
+                            <input 
+                                type="text" 
+                                v-model="exportFilename"
+                                placeholder="plexus_chat_backup..."
+                            />
+                            <button 
+                                class="ai-gen-btn" 
+                                @click="generateTitle" 
+                                :disabled="isGeneratingTitle || graphStore.nodes.length === 0" 
+                                :title="t('settings.data.generateTitle')"
+                            >
+                               <svg width="28" height="28" viewBox="-16 -16 32 32" :class="{ spinning: isGeneratingTitle }">
+                                   <!-- Hexagon Background -->
+                                   <path :d="hexPath(14)" fill="var(--color-ai)" stroke="var(--color-border)" stroke-width="1" />
+                                   <!-- Sparkles Icon (Centered) -->
+                                   <g transform="translate(-12, -12) scale(1)">
+                                       <!-- Adjusted scale/position for smaller viewbox if needed, or keep path same and scale group -->
+                                       <!-- Original path was for ~24px icon. Let's scale it down slightly to fit 28px box centered -->
+                                       <path transform="translate(4, 4) scale(0.66)" d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z" fill="white"/>
+                                   </g>
+                               </svg>
+                            </button>
+                        </div>
+                        <span class="extension-hint">.json</span>
+                    </div>
+                </div>
+
                 <div class="action-buttons">
                     <button class="action-btn" @click="exportData">
                         {{ t('settings.data.export') }}
@@ -300,6 +393,8 @@ const handleOverlayClick = () => {
 </template>
 
 <style scoped>
+/* ... (existing styles) ... */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -376,7 +471,8 @@ const handleOverlayClick = () => {
   margin-bottom: 0.5rem;
 }
 
-.input-group input {
+.input-group input,
+.input-with-action input { /* Targeting inputs specifically */
   width: 100%;
   background: var(--color-bg-input);
   border: 1px solid var(--color-border);
@@ -384,10 +480,15 @@ const handleOverlayClick = () => {
   border-radius: 8px;
   color: var(--color-text-primary);
   font-family: monospace;
-  box-sizing: border-box; /* Fix width */
+  box-sizing: border-box; 
 }
 
-.input-group input:focus {
+.input-with-action input {
+    padding-right: 3rem; /* Space for the button */
+}
+
+.input-group input:focus,
+.input-with-action input:focus {
   outline: none;
   border-color: var(--color-user);
 }
@@ -425,6 +526,7 @@ const handleOverlayClick = () => {
 
 .model-option input {
   margin-right: 1rem;
+  width: auto; /* Reset width for radio */
 }
 
 .model-name {
@@ -530,5 +632,69 @@ const handleOverlayClick = () => {
 .action-btn:hover {
   background: var(--color-bg-hover-glass);
   border-color: var(--color-user);
+}
+
+.filename-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.input-with-action {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* AI Generation Button */
+.ai-gen-btn {
+    position: absolute;
+    right: 8px;
+    /* Vertically center */
+    top: 50%;
+    transform: translateY(-50%);
+    
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0.9;
+    z-index: 2; /* On top of input */
+}
+
+.ai-gen-btn:hover:not(:disabled) {
+    /* Slightly scale up but keep centered context */
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+    filter: drop-shadow(0 0 4px var(--color-ai));
+}
+
+.ai-gen-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+    transform-origin: center;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.extension-hint {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    font-family: monospace;
+    white-space: nowrap;
+    user-select: none;
 }
 </style>

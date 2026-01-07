@@ -60,7 +60,9 @@ export default {
             import: '대화 불러오기',
             desc: '현재 대화 구성을 파일로 저장하거나 불러옵니다.',
             confirmLoad: '현재 대화가 대체됩니다. 계속하시겠습니까?',
-            loadSuccess: '대화를 성공적으로 불러왔습니다!'
+            loadSuccess: '대화를 성공적으로 불러왔습니다!',
+            filename: '파일 이름',
+            generateTitle: 'AI 제목 생성'
         },
         llm: {
             systemPrompt: '시스템 프롬프트',
