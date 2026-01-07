@@ -26,8 +26,18 @@ const exportData = () => {
     version: 1,
     timestamp: new Date().toISOString(),
     graph: {
-      nodes: graphStore.nodes,
-      links: graphStore.links
+      nodes: graphStore.nodes.map(n => ({
+        id: n.id,
+        type: n.type,
+        label: n.label,
+        summary: n.summary,
+        x: n.x,
+        y: n.y
+      })),
+      links: graphStore.links.map((l: any) => ({
+        source: typeof l.source === 'object' ? l.source.id : l.source,
+        target: typeof l.target === 'object' ? l.target.id : l.target
+      }))
     },
     llmSettings: {
         systemPrompt: store.systemPrompt,
@@ -65,7 +75,13 @@ const importData = (event: Event) => {
       if (confirm(t('settings.data.confirmLoad'))) {
           // Check for valid structure
           if (data.graph && Array.isArray(data.graph.nodes) && Array.isArray(data.graph.links)) {
-             graphStore.loadGraph(data.graph.nodes, data.graph.links)
+             // Sanitize links to ensure they use IDs, handling both legacy (object) and fresh (id) formats
+             const cleanLinks = data.graph.links.map((l: any) => ({
+                 source: typeof l.source === 'object' ? l.source.id : l.source,
+                 target: typeof l.target === 'object' ? l.target.id : l.target
+             }))
+             
+             graphStore.loadGraph(data.graph.nodes, cleanLinks)
              
              // Restore LLM Settings if present
              if (data.llmSettings) {
