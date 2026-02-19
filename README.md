@@ -1,6 +1,7 @@
 # Plexus-Chat: 비선형적 유기적 지식 대화 플랫폼
 
 > **"Linear Thought to Organic Network"** (선형적 사고에서 유기적 네트워크로)
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/219d5211-def5-4570-bccb-cb7df622173b" />
 
 <div align="center">
 
